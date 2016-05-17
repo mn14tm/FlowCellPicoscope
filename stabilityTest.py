@@ -118,7 +118,7 @@ class DecayMeasure:
         plt.plot(dataTimeAxis, data, label='Raw Data')
         plt.plot(dataTimeAxis, func(dataTimeAxis, *popt), 'r--', label=lifetime)
         plt.legend(loc="best")
-        # plt.savefig('Data\\data.png', dpi=900)
+        plt.savefig('Data/SingleSweep.png', dpi=900)
         plt.show()
 
         # # Save data to .txt file
@@ -179,9 +179,9 @@ if __name__ == "__main__":
     dm.openScope()
 
     ## Accumulate a set number of sweeps before plotting
-    # dm.accumulate(sweep_no=1)
+    dm.accumulate(sweep_no=1)
 
     ## Capture and fit single sweeps
-    dm.single_sweeps(sweep_no=900, reference='T27/Syrup_in_IL/60Gin2IL')
+    # dm.single_sweeps(sweep_no=900, reference='T27/Syrup_in_IL/60Gin2IL')
 
     dm.closeScope()
