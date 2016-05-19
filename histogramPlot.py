@@ -8,7 +8,7 @@ import matplotlib.colors as colors
 
 from cycler import cycler
 
-ref = 'T27/Syrup_in_IL/'
+ref = 'T15/Intralipid/'
 
 numbers = re.compile(r'(\d+)')
 
