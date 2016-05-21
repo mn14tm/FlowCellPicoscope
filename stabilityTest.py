@@ -144,7 +144,7 @@ class DecayMeasure:
         for i in tqdm(range(sweep_no)):
             # Collect data
             self.armMeasure()
-            ref = datetime.datetime.now().strftime("%H%M%S.3%f")
+            ref = datetime.datetime.now().strftime("%H%M%S.%f")
             data = self.measure()
 
             # Reject Time

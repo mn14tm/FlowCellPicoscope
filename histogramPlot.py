@@ -26,7 +26,7 @@ cNorm = colors.Normalize(vmin=0, vmax=NUM_COLORS)
 scalarMap = mplcm.ScalarMappable(norm=cNorm, cmap=cm)
 
 # Plot data histogram
-fig = plt.figure(1, figsize=(10.0,5.0))
+fig = plt.figure(1, figsize=(10.0, 5.0))
 ax = fig.add_subplot(111)
 ax.set_prop_cycle(cycler('color', [scalarMap.to_rgba(i) for i in range(NUM_COLORS)]))
 
