@@ -13,7 +13,7 @@ from threading import Thread
 
 
 # Initialise global values
-temp = 0
+tempC = 0
 humidity = 0
 
 
@@ -53,7 +53,7 @@ def ambientLogger():
         timeout=1
     )
 
-    global temp, humidity
+    global tempC, humidity
 
     buffer_string = ''
     while True:
@@ -146,14 +146,14 @@ class DecayMeasure:
             # Collect data
             self.armMeasure()
             dt = datetime.now()
-            temp_log.append(temp)
+            temp_log.append(tempC)
             data = self.measure()
 
             # Calculate lifetime
             popt = fit_decay(self.x, data)
             record.append(dt.timestamp())
             tau.append(popt[1])
-            temp_log.append(temp)
+            temp_log.append(tempC)
 
         # Plot histogram
         plt.figure(figsize=(10.0, 5.0))

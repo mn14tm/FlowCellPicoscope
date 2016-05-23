@@ -1,5 +1,9 @@
 import numpy as np
-import h5py
+import pandas as pd
 
-with h5py.File('data.h5', 'r') as hf:
-    print(hf.keys())
+store = pd.HDFStore('Data/store.h5')
+# List keys
+store.keys()
+
+# read back in
+df = pd.read_hdf('Data/store.h5', 'raw')
