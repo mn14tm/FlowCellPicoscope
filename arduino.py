@@ -9,7 +9,8 @@ def main():
     """ Continually log the temperature and humidity from arduino until killed
      by another program. Data saved as text file with timestamps. """
 
-    port = '/dev/tty.usbmodem621'
+    # port = '/dev/tty.usbmodem621'  # Mac
+    port = 'COM3'  # Windows
 
     ard = serial.Serial(port, 19200, timeout=1)
     time.sleep(2)  # wait for Arduino startup

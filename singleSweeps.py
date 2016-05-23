@@ -4,6 +4,7 @@ import numpy as np
 import winsound
 import serial
 import re
+import timeit
 
 from tqdm import *
 from picoscope import ps5000a
@@ -38,34 +39,6 @@ def fit_decay(t, y):
     return popt
 
 
-def ambientLogger():
-    """ Measure the temperature and humidity from arduino until killed
-     by another program. Data saved as text file with timestamps.
-
-     Code is from the http://tinyurl.com/zv5ssmv """
-
-    # Setup serial monitor for arduino
-    ser = serial.Serial(
-        port='/dev/tty.usbmodem621',
-        baudrate=19200,
-        timeout=0.1
-    )
-
-    # # Wait for arduino buffer to fill up
-    # time.sleep(3)
-
-    global temp, humidity
-
-    buffer_string = ''
-    while True:
-        buffer_string += ser.read(ser.inWaiting()).decode('utf-8')
-        if '\n' in buffer_string:
-            lines = buffer_string.split('\n')  # Guaranteed to have at least 2 entries
-            last_received = lines[-2]
-            # Extract data from string
-            [temp, humidity] = re.findall("\d+\.\d+", last_received)
-
-
 class DecayMeasure:
     def __init__(self):
         self.ps = ps5000a.PS5000a(connect=False)
@@ -77,7 +50,7 @@ class DecayMeasure:
         self.ps.setResolution(str(bitRes))
         print("Resolution =  %d Bit" % bitRes)
 
-        self.ps.setChannel("A", coupling="DC", VRange=10000.0E-3, VOffset=-9000.0E-3, enabled=True)
+        self.ps.setChannel("A", coupling="DC", VRange=500.0E-3, VOffset=-300.0E-3, enabled=True)
         self.ps.setChannel("B", coupling="DC", VRange=5.0, VOffset=0, enabled=False)
         self.ps.setSimpleTrigger(trigSrc="External", threshold_V=2.0, direction="Falling", timeout_ms=5000)
 
@@ -115,12 +88,13 @@ class DecayMeasure:
 
     def show_signal(self):
         """ Measure a single decay and show with the fit in a plot. """
+
         # Collect data
         self.armMeasure()
         data = self.measure()
 
         # Calculate lifetime
-        popt = fit_decay(self.x, y)
+        popt = fit_decay(self.x, data)
 
         # Plot figure
         fig = plt.figure()
@@ -137,56 +111,97 @@ class DecayMeasure:
     def single_sweeps(self, sweep_no, reference):
         """ Measure and save single sweeps. """
 
-        # Wait for arduino ambient measurements
+        # Wait for arduino to fire up loging temp and humidity to serial
         time.sleep(3)
 
         record = []
         tau = []
+        temp_log = []
         for i in tqdm(range(sweep_no)):
             # Collect data
             self.armMeasure()
             dt = datetime.now()
+            temp_log.append(temp)
             data = self.measure()
 
-            # Calculate lifetime
-            popt = fit_decay(self.x, data)
-            record.append(dt.timestamp())
-            tau.append(popt[1])
+            # start_time = timeit.default_timer()
+            np.savez('raw', dt=dt, data=data)
+            # elapsed = timeit.default_timer() - start_time
+            # print(elapsed)
 
-        # Plot histogram
-        plt.figure(figsize=(10.0, 5.0))
-        plt.hist(tau, bins=100)
-        plt.ticklabel_format(useOffset=False)
-        plt.xlabel('Lifetime (ms)')
-        plt.ylabel('Frequency')
-
-        # Save fitted lifetimes
-        record = np.asarray(record)
-        tau = np.asarray(tau)
-        saveData = np.c_[record, tau]
-        fname = 'Data/' + dt.strftime("%H%M%S.%f") + '.txt'
-        np.savetxt(fname, saveData, newline='\r\n')
+        #     # Calculate lifetime
+        #     popt = fit_decay(self.x, data)
+        #     record.append(dt.timestamp())
+        #     tau.append(popt[1])
+        #
+        # # Plot histogram
+        # plt.figure(figsize=(10.0, 5.0))
+        # plt.hist(tau, bins=100)
+        # plt.ticklabel_format(useOffset=False)
+        # plt.xlabel('Lifetime (ms)')
+        # plt.ylabel('Frequency')
+        #
+        # # Save fitted lifetimes
+        # record = np.asarray(record)
+        # tau = np.asarray(tau)
+        # temp_log = np.asarray(temp_log)
+        #
+        # saveData = np.c_[tau, temp_log]
+        # fname = 'Data/' + dt.strftime("%H%M%S.%f") + '.txt'
+        # np.savetxt(fname, saveData, newline='\r\n')
 
         winsound.Beep(600, 1000)
-        plt.show()
+        # plt.show()  # Breaks on multithreading for some reason
 
-if __name__ == "__main__":
-    sweeps = 900
-    file = 'T27/Syrup_in_IL/60Gin2IL'
+
+def ambientLogger():
+    """ Measure the temperature and humidity from arduino until killed
+     by another program. Code inspired from the http://tinyurl.com/zv5ssmv """
+
+    # Arduino port on computer
+    # port = '/dev/tty.usbmodem621'  # Mac
+    port = 'COM3'  # Windows
+
+    # Setup serial monitor for arduino
+    ser = serial.Serial(
+        port=port,
+        baudrate=19200,
+        timeout=1
+    )
+
+    global temp, humidity
+
+    buffer_string = ''
+    while True:
+        buffer_string += ser.read(ser.inWaiting()).decode('utf-8')
+        if '\n' in buffer_string:
+            lines = buffer_string.split('\n')  # Guaranteed to have at least 2 entries
+            last_received = lines[-2]
+            # Extract data from string
+            [temp, humidity] = re.findall("\d+\.\d+", last_received)
+
+
+def run():
+    sweeps = 20
+    file = 'air'
 
     dm = DecayMeasure()
     dm.openScope()
+    dm.single_sweeps(sweeps, file)
+    dm.closeScope()
+
+if __name__ == "__main__":
 
     # # Show a single sweep with the fit
+    # dm = DecayMeasure()
+    # dm.openScope()
     # dm.show_signal()
+    # dm.closeScope()
 
-    # # Capture and fit single sweeps while logging temperature
-    thread1 = Thread(target=dm.single_sweeps, args=(sweeps, file))
-
+    # Capture and fit single sweeps while logging temperature
+    thread1 = Thread(target=run)
     thread2 = Thread(target=ambientLogger)
     thread2.setDaemon(True)
-
     thread1.start()
     thread2.start()
 
-    dm.closeScope()
