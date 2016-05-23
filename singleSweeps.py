@@ -47,12 +47,12 @@ def ambientLogger():
     # Setup serial monitor for arduino
     ser = serial.Serial(
         port='/dev/tty.usbmodem621',
-        baudrate=9600,
-        timeout=1
+        baudrate=19200,
+        timeout=0.1
     )
 
-    # Wait for arduino buffer to fill up
-    time.sleep(3)
+    # # Wait for arduino buffer to fill up
+    # time.sleep(3)
 
     global temp, humidity
 

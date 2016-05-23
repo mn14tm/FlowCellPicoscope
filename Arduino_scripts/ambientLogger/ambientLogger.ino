@@ -67,7 +67,7 @@ int adc_key_in  = 0;
 void setup() {
 
   // Open serial connection to report values to host
-  Serial.begin(9600);
+  Serial.begin(19200);
   
   /*
   Initialize SHT15 sensor
@@ -112,7 +112,7 @@ void loop() {
   lcdPrintOut();
   
   // pause loop
-  delay(1000);
+  delay(10);
 }
 
 // ------------------------- HELPER FUNCTIONS
