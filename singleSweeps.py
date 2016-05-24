@@ -3,9 +3,10 @@ import time
 import winsound
 import serial
 import re
-import timeit
+import os
 import numpy as np
 import pandas as pd
+import timeit
 
 from tqdm import *
 from picoscope import ps5000a
@@ -41,7 +42,7 @@ def fit_decay(t, y):
 
 
 class DecayMeasure:
-    def __init__(self, chip="None", medium="Air", concentration=0):
+    def __init__(self, chip="None", medium="Air", concentration=np.nan):
         self.ps = ps5000a.PS5000a(connect=False)
         self.chip = chip
         self.medium = medium
@@ -86,7 +87,7 @@ class DecayMeasure:
     def measure(self):
         # print("Waiting for trigger")
         while not self.ps.isReady():
-            time.sleep(0.005)
+            time.sleep(0.001)
         # print("Sampling Done")
         return self.ps.getDataV("A")
 
@@ -115,62 +116,61 @@ class DecayMeasure:
     def single_sweeps(self, sweeps):
         """ Measure and save single sweeps. """
 
-        # Create/open HDF file
-        store = pd.HDFStore('Data/' + self.chip + '.h5')
-
-        # Store general measurement settings
-        log = pd.DataFrame({"tempC": tempC,
-                    "humidity": humidity,
-                    "datetimeStart": datetime.now(),
-                    "chip": self.chip,
-                    "medium": self.medium,
-                    "concentration": self.concentration,
-                    "fs (Hz)": self.res[0],
-                    "samples collected": self.res[1],
-                    "sweeps": sweeps,
-                    }, index=[0])
-        store.put('log', log)
-        store.put('raw/timeAxis', pd.Series(self.x))
         # Wait for arduino to fire up loging temp and humidity to serial
         time.sleep(3)
 
+        # Unique measurement ID
+        timestamp = datetime.now().timestamp()
+
+        # Make directory to store files
+        directory = "Data/raw/" + str(timestamp)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        # Collect and save data for each sweep
         for i in tqdm(range(sweeps)):
             # Collect data
             self.armMeasure()
             dt = datetime.now()
             data = self.measure()
-
             # start_time = timeit.default_timer()
-            # Store raw data
-            raw = pd.DataFrame({"datetime":dt,
-                                "data": data,
-                                "tempC": tempC,
-                                "humidity": humidity,
-                                "sweep": i})
-            fname = 'raw/sweep' + str(i+1)
-            store.put(fname, raw)
-            # elapsed = timeit.default_timer() - start_time
-            # print(elapsed)
-        store.close()
+            #####
+            fname = directory + "/" + str(i) + ".h5"
+            storeRaw = pd.HDFStore(fname)
 
-            # start_time = timeit.default_timer()
-            # # Calculate lifetime
+            # # Calculate lifetime for each sweep
             # popt = fit_decay(self.x, data)
-            # record.append(dt.timestamp())
-            # tau.append(popt[1])
+            # tau = popt[1]
+
+            rawLog = {"timeID": timestamp,
+                      "chip": self.chip,
+                      "medium": self.medium,
+                      "concentration": self.concentration,
+                      "fs": self.res[0],
+                      "sample_no": self.res[1],
+                      "sweeps": sweeps,
+                      "sweep_no": i,
+                      "datetime": dt,
+                      "tempC": tempC,
+                      "humidity": humidity}
+            rawLog = pd.DataFrame(rawLog, index=[0])
+            storeRaw.put('log/', rawLog)
+
+            rawData = pd.Series(data)
+            storeRaw.put('data/', rawData)
+            storeRaw.close()
+            ######
             # elapsed = timeit.default_timer() - start_time
             # print(elapsed)
 
         winsound.Beep(600, 1000)
 
-        # # Plot histogram
-        # plt.figure(figsize=(10.0, 5.0))
-        # plt.hist(tau, bins=100)
-        # plt.ticklabel_format(useOffset=False)
-        # plt.xlabel('Lifetime (ms)')
-        # plt.ylabel('Frequency')
-        # plt.show()  # Breaks on multithreading for some reason
-
+    def infiniteCapture(self):
+        try:
+            while True:
+                measure = 1
+        except KeyboardInterrupt:
+            exit()
 
 def ambientLogger():
     """ Measure the temperature and humidity from arduino until killed
@@ -202,12 +202,12 @@ def ambientLogger():
 def run():
     chip = 'T16'
     medium = 'Air'
-    concentration = 0
+    concentration = np.nan
     # info = "Medium doped with glucose in mmol. Flow cell setup."
 
     dm = DecayMeasure(chip, medium, concentration)
     dm.openScope()
-    dm.single_sweeps(sweeps=50)
+    dm.single_sweeps(sweeps=1000)
     dm.closeScope()
 
 if __name__ == "__main__":
