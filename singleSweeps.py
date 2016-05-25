@@ -148,12 +148,12 @@ class DecayMeasure:
         # Collect and save data for each sweep
         for i in tqdm(range(sweeps)):
 
-            if i == 1000:
-                self.medium = "Intralipid"
-            elif i == 2000:
-                self.medium = "Water"
-            elif i == 3000:
-                self.medium = "Intralipid"
+            # if i == 1000:
+            #     self.medium = "Intralipid"
+            # elif i == 2000:
+            #     self.medium = "Water"
+            # elif i == 3000:
+            #     self.medium = "Intralipid"
 
             # Collect data
             self.armMeasure()
@@ -297,6 +297,12 @@ def analyseData():
 
     plt.savefig("Data/" + timestamp + '/histogram.png', dpi=1000)
 
+    # Bring window to the front (above pycharm)
+    fig.canvas.manager.window.activateWindow()
+    fig.canvas.manager.window.raise_()
+    fig2.canvas.manager.window.activateWindow()
+    fig2.canvas.manager.window.raise_()
+
     plt.show()
 
 
@@ -308,7 +314,7 @@ def run():
 
     dm = DecayMeasure(chip, medium, concentration)
     dm.openScope()
-    dm.single_sweeps(sweeps=4000)
+    dm.single_sweeps(sweeps=20)
     dm.closeScope()
 
 if __name__ == "__main__":
@@ -325,6 +331,7 @@ if __name__ == "__main__":
     thread2.setDaemon(True)
     thread1.start()
     thread2.start()
+    thread1.join()
 
     print("Analysing data files...")
     analyseData()
