@@ -52,7 +52,6 @@ class DecayMeasure:
 
     def openScope(self):
         self.ps.open()
-        print("OK")
 
         bitRes = 16
         self.ps.setResolution(str(bitRes))
@@ -78,6 +77,7 @@ class DecayMeasure:
         print("Taking  samples = %d" % res[1])
         print("Maximum samples = %d" % res[2])
         self.res = res
+
         # Create a time axis for the plots
         self.x = np.arange(res[1]) * res[0] * 1E3
 
@@ -106,18 +106,6 @@ class DecayMeasure:
         residuals = data - mono_exp_decay(self.x, *popt)
         standd = np.std(residuals)
 
-        # # Plot figure
-        # fig = plt.figure()
-        # ax = fig.add_subplot(111)
-        # ax.plot(self.x, data, label="Raw Data")
-        # ax.plot(self.x, mono_exp_decay(self.x, *popt), 'r--', label="Fitted")
-        # ax.grid(True, which="major")
-        # plt.title("Lifetime is {:.4f} ms".format(popt[1]))
-        # plt.ylabel("Voltage (V)")
-        # plt.xlabel("Time (ms)")
-        # plt.legend(loc="best")
-        # plt.show()
-
         # Do plots
         fig, (ax1, ax2) = plt.subplots(2,figsize=(15,15), sharex=False)
         ax1.set_title("Lifetime is {0:.4f} $\pm$ {1:.4f} ms".format(popt[1], standd))
@@ -128,12 +116,15 @@ class DecayMeasure:
         ax1.grid(True, which="major")
         ax1.set_ylabel('Intensity (A.U.)')
         ax1.set_xlim(0, max(self.x))
+        ax1.axhline(y=0, color='k')
         ax1.legend()
 
         ax2.set_xlabel("Time (ms)")
         ax2.set_ylabel('Residuals')
+        ax2.axhline(y=0, color='k')
         ax2.plot(self.x, residuals)
         ax2.set_xlim(0,max(self.x))
+        ax2.grid(True, which="major")
 
         # Bring window to the front (above pycharm)
         fig.canvas.manager.window.activateWindow()
@@ -156,6 +147,14 @@ class DecayMeasure:
 
         # Collect and save data for each sweep
         for i in tqdm(range(sweeps)):
+
+            if i == 1000:
+                self.medium = "Intralipid"
+            elif i == 2000:
+                self.medium = "Water"
+            elif i == 3000:
+                self.medium = "Intralipid"
+
             # Collect data
             self.armMeasure()
             dt = datetime.now()
@@ -187,10 +186,6 @@ class DecayMeasure:
             # print(elapsed)
 
         winsound.Beep(600, 1000)
-
-        print("Analysing data files...")
-        analyseData(timestamp)
-        print("Done!")
 
     def infiniteCapture(self):
         try:
@@ -227,13 +222,17 @@ def ambientLogger():
             [tempC, humidity] = re.findall("\d+\.\d+", last_received)
 
 
-def analyseData(timestamp):
+def analyseData():
+
+    # Get most recently created folder
+    folder = max(gb.iglob("Data/*"), key=os.path.getctime)
+    timestamp = os.path.split(folder)[-1]
 
     # Empty data frame to append results to
     df = pd.DataFrame()
 
     # for folder in timestamped folder folder:
-    for file in gb.glob("Data/" + str(timestamp) + "/raw/*.h5"):
+    for file in gb.glob("Data/" + timestamp + "/raw/*.h5"):
         # print("Analysing file:" + file)
 
         # Load HDF file
@@ -266,7 +265,7 @@ def analyseData(timestamp):
     df = df.reset_index()
 
     # Save dataframe
-    df.to_csv("Data/" + str(timestamp) + "/analysis.csv")
+    df.to_csv("Data/" + timestamp + "/analysis.csv")
 
     # Create plot of lifetime vs time
     fig, ax = plt.subplots()
@@ -276,7 +275,7 @@ def analyseData(timestamp):
     # format the ticks
     ax.xaxis.set_major_locator(mdates.MinuteLocator())
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
-    ax.xaxis.set_minor_locator(mdates.SecondLocator(bysecond=np.arange(0, 60, 10)))
+    # ax.xaxis.set_minor_locator(mdates.SecondLocator(bysecond=np.arange(0, 60, 10)))
 
     ax.grid(True)
     fig.autofmt_xdate()
@@ -286,7 +285,7 @@ def analyseData(timestamp):
     # plt.tight_layout()
     plt.ticklabel_format(useOffset=False, axis='y')
 
-    plt.savefig("Data/" + str(timestamp) + '/lifetimeVsTime.png', dpi=1000)
+    plt.savefig("Data/" + timestamp + '/lifetimeVsTime.png', dpi=1000)
 
     # Create histogram plot
     fig2, ax2 = plt.subplots()
@@ -296,9 +295,9 @@ def analyseData(timestamp):
     plt.xlabel('Lifetime (ms)')
     plt.ylabel('Frequency')
 
-    plt.savefig("Data/" + str(timestamp) + '/histogram.png', dpi=1000)
+    plt.savefig("Data/" + timestamp + '/histogram.png', dpi=1000)
 
-    # plt.show()
+    plt.show()
 
 
 def run():
@@ -309,20 +308,24 @@ def run():
 
     dm = DecayMeasure(chip, medium, concentration)
     dm.openScope()
-    dm.single_sweeps(sweeps=100)
+    dm.single_sweeps(sweeps=4000)
     dm.closeScope()
 
 if __name__ == "__main__":
 
     # # Show a single sweep with the fit
-    dm = DecayMeasure()
-    dm.openScope()
-    dm.show_signal()
-    dm.closeScope()
+    # dm = DecayMeasure()
+    # dm.openScope()
+    # dm.show_signal()
+    # dm.closeScope()
 
-    # # Capture and fit single sweeps while logging temperature
-    # thread1 = Thread(target=run)
-    # thread2 = Thread(target=ambientLogger)
-    # thread2.setDaemon(True)
-    # thread1.start()
-    # thread2.start()
+    # Capture and fit single sweeps while logging temperature
+    thread1 = Thread(target=run)
+    thread2 = Thread(target=ambientLogger)
+    thread2.setDaemon(True)
+    thread1.start()
+    thread2.start()
+
+    print("Analysing data files...")
+    analyseData()
+    print("Done!")
