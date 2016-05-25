@@ -18,6 +18,7 @@ from threading import Thread
 
 
 # Initialise global values
+timestamp = 0
 tempC = 0
 humidity = 0
 
@@ -138,6 +139,7 @@ class DecayMeasure:
         time.sleep(3)
 
         # Unique measurement ID
+        global timestamp
         timestamp = datetime.now().timestamp()
 
         # Make directory to store files
@@ -224,15 +226,11 @@ def ambientLogger():
 
 def analyseData():
 
-    # Get most recently created folder
-    folder = max(gb.iglob("Data/*"), key=os.path.getctime)
-    timestamp = os.path.split(folder)[-1]
-
     # Empty data frame to append results to
     df = pd.DataFrame()
 
     # for folder in timestamped folder folder:
-    for file in gb.glob("Data/" + timestamp + "/raw/*.h5"):
+    for file in gb.glob("Data/" + str(timestamp) + "/raw/*.h5"):
         # print("Analysing file:" + file)
 
         # Load HDF file
@@ -265,7 +263,7 @@ def analyseData():
     df = df.reset_index()
 
     # Save dataframe
-    df.to_csv("Data/" + timestamp + "/analysis.csv")
+    df.to_csv("Data/" + str(timestamp) + "/analysis.csv")
 
     # Create plot of lifetime vs time
     fig, ax = plt.subplots()
@@ -285,7 +283,7 @@ def analyseData():
     # plt.tight_layout()
     plt.ticklabel_format(useOffset=False, axis='y')
 
-    plt.savefig("Data/" + timestamp + '/lifetimeVsTime.png', dpi=1000)
+    plt.savefig("Data/" + str(timestamp) + '/lifetimeVsTime.png', dpi=1000)
 
     # Create histogram plot
     fig2, ax2 = plt.subplots()
@@ -295,7 +293,7 @@ def analyseData():
     plt.xlabel('Lifetime (ms)')
     plt.ylabel('Frequency')
 
-    plt.savefig("Data/" + timestamp + '/histogram.png', dpi=1000)
+    plt.savefig("Data/" + str(timestamp) + '/histogram.png', dpi=1000)
 
     # Bring window to the front (above pycharm)
     fig.canvas.manager.window.activateWindow()
