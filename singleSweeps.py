@@ -58,7 +58,7 @@ class DecayMeasure:
         self.ps.setResolution(str(bitRes))
         print("Resolution =  %d Bit" % bitRes)
 
-        self.ps.setChannel("A", coupling="DC", VRange=1000.0E-3, VOffset=-500.0E-3, enabled=True)
+        self.ps.setChannel("A", coupling="DC", VRange=5.0, VOffset=-2500.0E-3, enabled=True)
         self.ps.setChannel("B", coupling="DC", VRange=5.0, VOffset=0, enabled=False)
         self.ps.setSimpleTrigger(trigSrc="External", threshold_V=2.0, direction="Falling", timeout_ms=5000)
 
@@ -71,6 +71,7 @@ class DecayMeasure:
         sampleInterval = 1.0 / sampleFreq
 
         res = self.ps.setSamplingInterval(sampleInterval, obsDuration)
+        print(res)
 
         # Print final capture settings
         print("Sampling frequency = %.3f MHz" % (1E-6/res[0]))
@@ -78,9 +79,6 @@ class DecayMeasure:
         print("Taking  samples = %d" % res[1])
         print("Maximum samples = %d" % res[2])
         self.res = res
-
-        # Create a time axis for the plots
-        self.x = np.arange(res[1]) * res[0] * 1E3
 
     def closeScope(self):
         self.ps.close()
@@ -97,6 +95,11 @@ class DecayMeasure:
 
     def show_signal(self):
         """ Measure a single decay and show with the fit in a plot. """
+
+        # Create a time axis for the plots
+        self.x = np.arange(self.res[1]) * self.res[0]
+        # Convert time axis to milliseconds
+        self.x *= 1E3
 
         # Collect data
         self.armMeasure()
@@ -135,9 +138,6 @@ class DecayMeasure:
     def single_sweeps(self, sweeps):
         """ Measure and save single sweeps. """
 
-        # Wait for arduino to fire up loging temp and humidity to serial
-        time.sleep(3)
-
         # Unique measurement ID
         global timestamp
         timestamp = datetime.now().timestamp()
@@ -149,13 +149,6 @@ class DecayMeasure:
 
         # Collect and save data for each sweep
         for i in tqdm(range(sweeps)):
-
-            # if i == 1000:
-            #     self.medium = "Intralipid"
-            # elif i == 2000:
-            #     self.medium = "Water"
-            # elif i == 3000:
-            #     self.medium = "Intralipid"
 
             # Collect data
             self.armMeasure()
@@ -304,20 +297,50 @@ def analyseData():
     plt.show()
 
 
+def setConcentration(i):
+    if i == 0:
+        return 0
+    elif i == 2:
+        return 0.68
+    elif i == 4:
+        return 1.25
+    elif i == 6:
+        return 3.21
+    elif i == 8:
+        return 5.85
+    elif i == 12:
+        return 7.93
+    elif i == 14:
+        return 11.8
+    elif i == 16:
+        return 13.5
+    elif i == 20:
+        return 17.1
+    elif i == 50:
+        return 45.6
+    else:
+        print("Error")
+        exit()
+
+
 def run():
-    chip = 'T16'
-    medium = 'Air'
-    concentration = np.nan
-    # info = "Medium doped with glucose in mmol. Flow cell setup."
+    chip = 'T15'
+
+    # medium = 'Air'
+    # concentration = np.nan
+    medium = 'Blood'
+    concentration = setConcentration(50)
+
+    print("Measuring concentration {}".format(concentration))
 
     dm = DecayMeasure(chip, medium, concentration)
     dm.openScope()
-    dm.single_sweeps(sweeps=20)
+    dm.single_sweeps(sweeps=600)
     dm.closeScope()
 
 if __name__ == "__main__":
 
-    # # Show a single sweep with the fit
+    # Show a single sweep with the fit
     # dm = DecayMeasure()
     # dm.openScope()
     # dm.show_signal()
@@ -330,7 +353,6 @@ if __name__ == "__main__":
     thread1.start()
     thread2.start()
     thread1.join()
-
     print("Analysing data files...")
     analyseData()
     print("Done!")
