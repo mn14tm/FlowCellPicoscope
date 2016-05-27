@@ -58,7 +58,7 @@ class DecayMeasure:
         self.ps.setResolution(str(bitRes))
         print("Resolution =  %d Bit" % bitRes)
 
-        self.ps.setChannel("A", coupling="DC", VRange=5.0, VOffset=-2500.0E-3, enabled=True)
+        self.ps.setChannel("A", coupling="DC", VRange=20.0, VOffset=-9.0, enabled=True)
         self.ps.setChannel("B", coupling="DC", VRange=5.0, VOffset=0, enabled=False)
         self.ps.setSimpleTrigger(trigSrc="External", threshold_V=2.0, direction="Falling", timeout_ms=5000)
 
@@ -301,30 +301,30 @@ def setConcentration(i):
     if i == 0:
         return 0
     elif i == 2:
-        return 0.68
+        return 1.65
     elif i == 4:
-        return 1.25
+        return 3.97
     elif i == 6:
-        return 3.21
+        return 5.68
     elif i == 8:
-        return 5.85
+        return 7.7
     elif i == 12:
-        return 7.93
+        return 9.70
     elif i == 14:
-        return 11.8
+        return 11.1
     elif i == 16:
-        return 13.5
+        return 14.1
     elif i == 20:
-        return 17.1
+        return 23.5
     elif i == 50:
-        return 45.6
+        return 47.8
     else:
         print("Error")
         exit()
 
 
 def run():
-    chip = 'T15'
+    chip = 'T28'
 
     # medium = 'Air'
     # concentration = np.nan

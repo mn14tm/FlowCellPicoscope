@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import glob as gb
 import os
 
-sample = "T15"
+sample = "T28"
 
 df = pd.DataFrame()
 
@@ -36,7 +36,7 @@ ax.set_ylabel('Lifetime (ms)')
 ax.grid(True)
 
 plt.tight_layout()
-plt.savefig("Data/" + sample + '/concVslifetime.png', dpi=1000)
+plt.savefig("Data/" + sample + '/' + sample + '_concVslifetime.png', dpi=1000)
 
 # Bring window to the front (above pycharm)
 fig.canvas.manager.window.activateWindow()
@@ -48,7 +48,7 @@ df_plot = df[['concentration', 'tau', 'tempC', 'humidity']]
 df_plot.plot(subplots=True, layout=(-1, 1), figsize=(15, 10), sharex=True)
 fig.autofmt_xdate()
 plt.ticklabel_format(useOffset=False, axis='y')
-plt.savefig("Data/" + sample + '/overview.png', dpi=1000)
+plt.savefig("Data/" + sample + '/' + sample + '_overview.png', dpi=1000)
 
 # Bring window to the front (above pycharm)
 fig.canvas.manager.window.activateWindow()
