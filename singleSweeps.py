@@ -58,7 +58,7 @@ class DecayMeasure:
         self.ps.setResolution(str(bitRes))
         print("Resolution =  %d Bit" % bitRes)
 
-        self.ps.setChannel("A", coupling="DC", VRange=20.0, VOffset=-9.0, enabled=True)
+        self.ps.setChannel("A", coupling="DC", VRange=0.5, VOffset=-0.2, enabled=True)
         self.ps.setChannel("B", coupling="DC", VRange=5.0, VOffset=0, enabled=False)
         self.ps.setSimpleTrigger(trigSrc="External", threshold_V=2.0, direction="Falling", timeout_ms=5000)
 
@@ -301,30 +301,30 @@ def setConcentration(i):
     if i == 0:
         return 0
     elif i == 2:
-        return 1.65
+        return 1.11
     elif i == 4:
-        return 3.97
+        return 2.71
     elif i == 6:
-        return 5.68
+        return 4.16
     elif i == 8:
-        return 7.7
+        return 6.84
+    elif i == 10:
+        return 8.73
     elif i == 12:
-        return 9.70
+        return 10.9
     elif i == 14:
-        return 11.1
-    elif i == 16:
-        return 14.1
+        return 13.8
     elif i == 20:
-        return 23.5
+        return 19.5
     elif i == 50:
-        return 47.8
+        return 47.4
     else:
         print("Error")
         exit()
 
 
 def run():
-    chip = 'T28'
+    chip = 'T1'
 
     # medium = 'Air'
     # concentration = np.nan
@@ -340,13 +340,13 @@ def run():
 
 if __name__ == "__main__":
 
-    # Show a single sweep with the fit
+    # # Show a single sweep with the fit
     # dm = DecayMeasure()
     # dm.openScope()
     # dm.show_signal()
     # dm.closeScope()
 
-    # Capture and fit single sweeps while logging temperature
+   # Capture and fit single sweeps while logging temperature
     thread1 = Thread(target=run)
     thread2 = Thread(target=ambientLogger)
     thread2.setDaemon(True)
