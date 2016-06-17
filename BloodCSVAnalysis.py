@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import glob as gb
 import os
 
-sample = "T22_5"
+sample = "T12_2"
 
 df = pd.DataFrame()
 
@@ -35,6 +35,7 @@ ax.set_xlabel('Glucose concentration (mmol)')
 ax.set_ylabel('Lifetime (ms)')
 ax.grid(True)
 
+plt.ylim([8.45, 8.92])
 plt.tight_layout()
 plt.savefig("Data/" + sample + '/' + sample + '_concVslifetime.png', dpi=1000)
 

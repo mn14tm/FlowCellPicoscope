@@ -1,202 +1,71 @@
-import matplotlib.pyplot as plt
-import time
+import pandas as pd
 import numpy as np
-import winsound
-import serial
-import re
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+import glob as gb
+import os
 
-from tqdm import *
-from picoscope import ps5000a
-from scipy.optimize import curve_fit
-from datetime import datetime
-from threading import Thread
+sample = "T16"
 
+df = pd.DataFrame()
 
-# Initialise global values
-tempC = 0
-humidity = 0
+# Get list of folders
+folders = gb.glob("Data/" + sample + "/*/")
+for folder in folders:
+    # print(file)
 
+    # Load HDF file
+    df_file = pd.read_csv(folder + '/analysis.csv')
 
-def mono_exp_decay(t, a, tau, c):
-    """ Mono-exponential decay function. t is the time."""
-    return a * np.exp(-t / tau) + c
+    # Add sweep data to measurement dataframe
+    df = df.append(df_file)
 
+# Sort rows by datetime
+df['datetime'] = pd.to_datetime(df['datetime'])
+df = df.set_index('datetime').sort_index()
+df = df.reset_index()
 
-def fit_decay(t, y):
-    """ Function to fit the data, y, to the mono-exponential decay."""
-    # Guess initial fitting parameters
-    a_guess = max(y) - min(y)
+# Plot concentration vs lifetime
+fig, ax = plt.subplots()
+ax.plot(df['concentration'], df['tau'], 'o', alpha=0.3, label=sample)
 
-    y_norm = y - min(y)
-    y_norm = y_norm / max(y_norm)
-    t_loc = np.where(y_norm <= 1/np.e)
-    tau_guess = t[t_loc[0][0]]
+sample = "T16_2"
 
-    c_guess = min(y)
-    # Fit decay
-    popt, pcov = curve_fit(mono_exp_decay, t, y, p0=(a_guess, tau_guess, c_guess))
-    return popt
+df = pd.DataFrame()
 
+# Get list of folders
+folders = gb.glob("Data/" + sample + "/*/")
+for folder in folders:
+    # print(file)
 
-def ambientLogger():
-    """ Measure the temperature and humidity from arduino until killed
-     by another program. Data saved as text file with timestamps.
+    # Load HDF file
+    df_file = pd.read_csv(folder + '/analysis.csv')
 
-     Code is from the http://tinyurl.com/zv5ssmv """
-    # port = '/dev/tty.usbmodem621'  # Mac
-    port = 'COM3'  # Windows
+    # Add sweep data to measurement dataframe
+    df = df.append(df_file)
 
-    # Setup serial monitor for arduino
-    ser = serial.Serial(
-        port=port,
-        baudrate=19200,
-        timeout=1
-    )
+# Sort rows by datetime
+df['datetime'] = pd.to_datetime(df['datetime'])
+df = df.set_index('datetime').sort_index()
+df = df.reset_index()
 
-    global tempC, humidity
+# Plot concentration vs lifetime
+# fig, ax = plt.subplots()
+ax.plot(df['concentration'], df['tau'], 'o', alpha=0.3, label=sample)
 
-    buffer_string = ''
-    while True:
-        buffer_string += ser.read(ser.inWaiting()).decode('utf-8')
-        if '\n' in buffer_string:
-            lines = buffer_string.split('\n')  # Guaranteed to have at least 2 entries
-            last_received = lines[-2]
-            # Extract data from string
-            [temp, humidity] = re.findall("\d+\.\d+", last_received)
+plt.ticklabel_format(useOffset=False, axis='y')
 
+ax.set_xlabel('Glucose concentration (mmol)')
+ax.set_ylabel('Lifetime (ms)')
+ax.grid(True)
+plt.legend()
 
-class DecayMeasure:
-    def __init__(self):
-        self.ps = ps5000a.PS5000a(connect=False)
+# plt.ylim([8.45, 8.92])
+plt.tight_layout()
+plt.savefig("Data/" + sample + '/' + sample + '_concVslifetime.png', dpi=1000)
 
-    def openScope(self):
-        self.ps.open()
+# Bring window to the front (above pycharm)
+fig.canvas.manager.window.activateWindow()
+fig.canvas.manager.window.raise_()
 
-        bitRes = 16
-        self.ps.setResolution(str(bitRes))
-        print("Resolution =  %d Bit" % bitRes)
-
-        self.ps.setChannel("A", coupling="DC", VRange=10000.0E-3, VOffset=-9000.0E-3, enabled=True)
-        self.ps.setChannel("B", coupling="DC", VRange=5.0, VOffset=0, enabled=False)
-        self.ps.setSimpleTrigger(trigSrc="External", threshold_V=2.0, direction="Falling", timeout_ms=5000)
-
-        # Set capture duration, s
-        waveformDuration = 100E-3
-        obsDuration = 1*waveformDuration
-
-        # Set sampling rate, Hz
-        sampleFreq = 1E4
-        sampleInterval = 1.0 / sampleFreq
-
-        res = self.ps.setSamplingInterval(sampleInterval, obsDuration)
-
-        # Print final capture settings
-        print("Sampling frequency = %.3f MHz" % (1E-6/res[0]))
-        print("Sampling interval = %.f ns" % (res[0] * 1E9))
-        print("Taking  samples = %d" % res[1])
-        print("Maximum samples = %d" % res[2])
-
-        # Create a time axis for the plots
-        self.x = np.arange(res[1]) * res[0] * 1E3
-
-    def closeScope(self):
-        self.ps.close()
-
-    def armMeasure(self):
-        self.ps.runBlock()
-
-    def measure(self):
-        # print("Waiting for trigger")
-        while not self.ps.isReady():
-            time.sleep(0.01)
-        # print("Sampling Done")
-        return self.ps.getDataV("A")
-
-    def show_signal(self):
-        """ Measure a single decay and show with the fit in a plot. """
-        # Collect data
-        self.armMeasure()
-        data = self.measure()
-
-        # Calculate lifetime
-        popt = fit_decay(self.x, data)
-
-        # Plot figure
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.plot(self.x, data, label="Raw Data")
-        ax.plot(self.x, mono_exp_decay(self.x, *popt), 'r--', label="Fitted")
-        ax.grid(True, which="major")
-        plt.title("Lifetime is {:.4f} ms".format(popt[1]))
-        plt.ylabel("Voltage (V)")
-        plt.xlabel("Time (ms)")
-        plt.legend(loc="best")
-        plt.show()
-
-    def single_sweeps(self, sweep_no, reference):
-        """ Measure and save single sweeps. """
-
-        # Wait for arduino to log temp and humidity to serial
-        time.sleep(3)
-
-        record = []
-        tau = []
-        temp_log = []
-        for i in tqdm(range(sweep_no)):
-            # Collect data
-            self.armMeasure()
-            dt = datetime.now()
-            temp_log.append(tempC)
-            data = self.measure()
-
-            # Calculate lifetime
-            popt = fit_decay(self.x, data)
-            record.append(dt.timestamp())
-            tau.append(popt[1])
-            temp_log.append(tempC)
-
-        # Plot histogram
-        plt.figure(figsize=(10.0, 5.0))
-        plt.hist(tau, bins=100)
-        plt.ticklabel_format(useOffset=False)
-        plt.xlabel('Lifetime (ms)')
-        plt.ylabel('Frequency')
-
-        # Save fitted lifetimes
-        record = np.asarray(record)
-        tau = np.asarray(tau)
-        temp_log = np.asarray(temp_log)
-
-        print(temp_log)
-
-        # saveData = np.c_[tau, temp_log]
-        # fname = 'Data/' + dt.strftime("%H%M%S.%f") + '.txt'
-        # np.savetxt(fname, saveData, newline='\r\n')
-
-        winsound.Beep(600, 1000)
-        plt.show()
-
-
-def main_func():
-    sweeps = 20
-    file = 'air'
-
-    dm = DecayMeasure()
-    dm.openScope()
-    dm.single_sweeps(sweeps, file)
-    dm.closeScope()
-
-if __name__ == "__main__":
-
-
-    # # Show a single sweep with the fit
-    # dm.show_signal()
-    #
-    # Capture and fit single sweeps while logging temperature
-    thread1 = Thread(target=main_func)
-    thread2 = Thread(target=ambientLogger)
-    thread2.setDaemon(True)
-
-    thread1.start()
-    thread2.start()
-
+plt.show()
