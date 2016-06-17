@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import glob as gb
 import os
 
-sample = "T1"
+sample = "T22_5"
 
 df = pd.DataFrame()
 

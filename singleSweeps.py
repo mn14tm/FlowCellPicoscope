@@ -58,7 +58,7 @@ class DecayMeasure:
         self.ps.setResolution(str(bitRes))
         print("Resolution =  %d Bit" % bitRes)
 
-        self.ps.setChannel("A", coupling="DC", VRange=0.5, VOffset=-0.2, enabled=True)
+        self.ps.setChannel("A", coupling="DC", VRange=5, VOffset=-4, enabled=True)
         self.ps.setChannel("B", coupling="DC", VRange=5.0, VOffset=0, enabled=False)
         self.ps.setSimpleTrigger(trigSrc="External", threshold_V=2.0, direction="Falling", timeout_ms=5000)
 
@@ -301,34 +301,34 @@ def setConcentration(i):
     if i == 0:
         return 0
     elif i == 2:
-        return 1.11
+        return 1.71
     elif i == 4:
-        return 2.71
+        return 4.23
     elif i == 6:
-        return 4.16
+        return 5.53
     elif i == 8:
-        return 6.84
+        return 7.86
     elif i == 10:
-        return 8.73
+        return 9.46
     elif i == 12:
-        return 10.9
+        return 10.6
     elif i == 14:
-        return 13.8
+        return 13.6
     elif i == 20:
         return 19.5
     elif i == 50:
-        return 47.4
+        return 45.0
     else:
         print("Error")
         exit()
 
 
 def run():
-    chip = 'T1'
+    chip = 'T22'
 
     # medium = 'Air'
     # concentration = np.nan
-    medium = 'Blood'
+    medium = 'Intralipid_glucose'
     concentration = setConcentration(50)
 
     print("Measuring concentration {}".format(concentration))
@@ -340,11 +340,11 @@ def run():
 
 if __name__ == "__main__":
 
-    # # Show a single sweep with the fit
-    # dm = DecayMeasure()
-    # dm.openScope()
-    # dm.show_signal()
-    # dm.closeScope()
+   # # Show a single sweep with the fit
+   #  dm = DecayMeasure()
+   #  dm.openScope()
+   #  dm.show_signal()
+   #  dm.closeScope()
 
    # Capture and fit single sweeps while logging temperature
     thread1 = Thread(target=run)
