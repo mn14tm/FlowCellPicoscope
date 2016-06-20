@@ -1,3 +1,7 @@
+"""
+Analyse all hdf5 files in Data folder and dump into a CSV/pickle.
+"""
+
 import pandas as pd
 import numpy as np
 import matplotlib.dates as mdates
@@ -33,22 +37,37 @@ files = gb.glob('Data/**/*.h5', recursive=True)
 
 df = pd.DataFrame()
 for file in tqdm(files):
-    # Load HDF file
-    store = pd.HDFStore(file)
+    try:
+        # Load HDF file
+        store = pd.HDFStore(file)
 
-    df_file = store['log']
+        df_file = store['log']
+        df_file['folder'] = file.split(os.sep)[1]
 
-    # Create time axis in ms
-    fs = store['log']['fs'][0]
-    samples = store['log']['sample_no'][0]
+        # Convert datatypes
+        df_file['tempC'] = df_file['tempC'].apply(float)
+        df_file['humidity'] = df_file['humidity'].apply(float)
+        df_file['chip'] = df_file['chip'].apply(str)
+        df_file['medium'] = df_file['medium'].apply(str)
 
-    x = np.arange(samples) * fs * 1E3
+        # Create time axis in ms
+        fs = store['log']['fs'][0]
+        samples = store['log']['sample_no'][0]
 
-    # Load decay data
-    y = store['data']
+        x = np.arange(samples) * fs * 1E3
 
-    # Calculate lifetime
-    popt = fit_decay(x, y)
+        # Load decay data
+        y = store['data']
+
+        # Close hdf5 file
+        store.close()
+
+        # Calculate lifetime
+        popt = fit_decay(x, y)
+
+    except:
+        print(file)
+        popt = [np.nan,  np.nan, np.nan]
 
     # Append lifetime to dataframe
     df_file['a'] = popt[0]
@@ -57,9 +76,6 @@ for file in tqdm(files):
 
     # Add sweep data to measurement dataframe
     df = df.append(df_file)
-
-    # Close hdf5 file
-    store.close()
 
 # Sort rows by datetime
 df = df.set_index('datetime').sort_index()

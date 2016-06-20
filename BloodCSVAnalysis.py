@@ -1,3 +1,7 @@
+"""
+Analyse a single chip CSV from data folder.
+"""
+
 import pandas as pd
 import numpy as np
 import matplotlib.dates as mdates
@@ -5,7 +9,7 @@ import matplotlib.pyplot as plt
 import glob as gb
 import os
 
-sample = "T12_2"
+sample = "T12"
 
 df = pd.DataFrame()
 
@@ -35,7 +39,7 @@ ax.set_xlabel('Glucose concentration (mmol)')
 ax.set_ylabel('Lifetime (ms)')
 ax.grid(True)
 
-plt.ylim([8.45, 8.92])
+# plt.ylim([8.45, 8.92])
 plt.tight_layout()
 plt.savefig("Data/" + sample + '/' + sample + '_concVslifetime.png', dpi=1000)
 
