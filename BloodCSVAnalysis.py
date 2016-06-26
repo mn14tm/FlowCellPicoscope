@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import glob as gb
 import os
 
-sample = "T12"
+sample = "/Collimated Beam/T16"
 
 df = pd.DataFrame()
 
