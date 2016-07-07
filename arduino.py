@@ -1,65 +1,52 @@
 #!/usr/bin/python
 import serial
-import time
 import re
+import time
 from datetime import datetime
 
 
 def main():
-    """ Continually log the temperature and humidity from arduino until killed
-     by another program. Data saved as text file with timestamps. """
-
-    # port = '/dev/tty.usbmodem621'  # Mac
-    port = 'COM3'  # Windows
-
-    ard = serial.Serial(port, 19200, timeout=1)
-    time.sleep(2)  # wait for Arduino startup
-
-    while True:
-        # Serial read temperature and humidity
-        msg = ard.readline().decode('utf-8')
-
-        # Extract data from string
-        [temp, humidity] = re.findall("\d+\.\d+", msg)
-        # Print
-        timestamp = datetime.now()
-        print("Measurement at {}".format(timestamp))
-        print("\tTemperature: {}°C".format(temp))
-        print("\tHumidity:    {}%\n".format(humidity))
-
-        time.sleep(0.1)
-        # exit()
-
-def ambientLogger():
-    """ Measure the temperature and humidity from arduino until killed
-     by another program. Data saved as text file with timestamps.
-
-     Code is from the http://tinyurl.com/zv5ssmv """
-
-    # Setup serial monitor for arduino
+    # Setup serial port to communicate with arduino
     ser = serial.Serial(
-        port='/dev/tty.usbmodem621',
-        baudrate=19200,
+        port='COM3',
+        baudrate=115200,
         timeout=1
     )
 
-    # # Wait for arduino buffer to fill up
-    # time.sleep(0.1)
+    # Allow arduino to fire up
+    time.sleep(2)
+    requestData(ser)
+    time.sleep(2)
+    getAmbient(ser)
+    getThermocouple(ser)
 
-    buffer_string = ''
 
-    buffer_string += ser.read(ser.inWaiting()).decode('utf-8')
-    if '\n' in buffer_string:
-        lines = buffer_string.split('\n')  # Guaranteed to have at least 2 entries
-        last_received = lines[-2]
-        # Extract data from string
-        [temp, humidity] = re.findall("\d+\.\d+", last_received)
+def requestData(ser):
+    # Serial read temperature and humidity
+    ser.write(b'SHT\n')
+    # Serial read temperature and humidity
+    ser.write(b'TK\n')
 
-    return temp, humidity
+
+def getAmbient(ser):
+    msg = ser.readline().decode('utf-8')  # Add [:-2]
+
+    # Extract data from string
+    [temp, humidity] = re.findall(r'\d+\.\d+', msg)
+
+    print("\tTemperature: {}°C".format(temp))
+    print("\tHumidity:    {}%\n".format(humidity))
+
+
+def getThermocouple(ser):
+    msg = ser.readline().decode('utf-8')  # Add [:-2]
+
+    # Extract data from string
+    [t_in, t_out] = re.findall(r'\d+\.\d+', msg)
+
+    print("\tTemperature in:  {}°C".format(t_in))
+    print("\tTemperature out: {}%\n".format(t_out))
+
 
 if __name__ == "__main__":
     main()
-
-    # for i in range(5):
-    #     print(ambientLogger())
-    #     time.sleep(1)

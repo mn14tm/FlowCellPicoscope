@@ -205,7 +205,7 @@ def ambientLogger():
         timeout=1
     )
 
-    global tempC, humidity
+    # global tempC, humidity
 
     buffer_string = ''
     while True:
@@ -340,7 +340,7 @@ def run():
 
     dm = DecayMeasure(chip, medium, concentration)
     dm.openScope()
-    dm.single_sweeps(sweeps=600)
+    dm.single_sweeps(sweeps=6)
     dm.closeScope()
 
 if __name__ == "__main__":
