@@ -58,7 +58,7 @@ class DecayMeasure:
         self.ps.setResolution(str(bitRes))
         print("Resolution =  %d Bit" % bitRes)
 
-        self.ps.setChannel("A", coupling="DC", VRange=5, VOffset=-4, enabled=True)
+        self.ps.setChannel("A", coupling="DC", VRange=2, VOffset=-1.8, enabled=True)
         self.ps.setChannel("B", coupling="DC", VRange=5.0, VOffset=0, enabled=False)
         self.ps.setSimpleTrigger(trigSrc="External", threshold_V=2.0, direction="Falling", timeout_ms=5000)
 
@@ -240,9 +240,11 @@ def analyseData():
 
         # Calculate lifetime
         popt = fit_decay(x, y)
+        A = popt[1]
         tau = popt[1]
 
         # Append lifetime to dataframe
+        df_file['A'] = A
         df_file['tau'] = tau
 
         # Add sweep data to measurement dataframe
@@ -301,23 +303,25 @@ def setConcentration(i):
     if i == 0:
         return 0
     elif i == 2:
-        return 1.71
+        return 2
     elif i == 4:
-        return 4.23
+        return 4
     elif i == 6:
-        return 5.53
+        return 6
     elif i == 8:
-        return 7.86
+        return 8
     elif i == 10:
-        return 9.46
+        return 10
     elif i == 12:
-        return 10.6
+        return 12
     elif i == 14:
-        return 13.6
+        return 14
+    elif i == 16:
+        return 16
     elif i == 20:
-        return 19.5
+        return 20
     elif i == 50:
-        return 45.0
+        return 50
     else:
         print("Error")
         exit()
@@ -326,10 +330,11 @@ def setConcentration(i):
 def run():
     chip = 'T22'
 
-    # medium = 'Air'
-    # concentration = np.nan
-    medium = 'Intralipid_glucose'
-    concentration = setConcentration(50)
+    medium = 'Air'
+    concentration = np.nan
+    # concentration = 0.1
+    # medium = 'Water'
+    # concentration = setConcentration(0)
 
     print("Measuring concentration {}".format(concentration))
 
@@ -340,11 +345,11 @@ def run():
 
 if __name__ == "__main__":
 
-   # # Show a single sweep with the fit
-   #  dm = DecayMeasure()
-   #  dm.openScope()
-   #  dm.show_signal()
-   #  dm.closeScope()
+   # Show a single sweep with the fit
+    dm = DecayMeasure()
+    dm.openScope()
+    dm.show_signal()
+    dm.closeScope()
 
    # Capture and fit single sweeps while logging temperature
     thread1 = Thread(target=run)
