@@ -9,7 +9,8 @@ import matplotlib.pyplot as plt
 import glob as gb
 import os
 
-sample = "/Collimated Beam/T16"
+sample = "/T7intralipid"
+# sample = "/T7syrup"
 
 df = pd.DataFrame()
 
@@ -47,16 +48,16 @@ plt.savefig("Data/" + sample + '/' + sample + '_concVslifetime.png', dpi=1000)
 fig.canvas.manager.window.activateWindow()
 fig.canvas.manager.window.raise_()
 
-# All sensor data plot against time
-df = df.set_index('datetime')
-df_plot = df[['concentration', 'tau', 'tempC', 'humidity']]
-df_plot.plot(subplots=True, layout=(-1, 1), figsize=(15, 10), sharex=True)
-fig.autofmt_xdate()
-plt.ticklabel_format(useOffset=False, axis='y')
-plt.savefig("Data/" + sample + '/' + sample + '_overview.png', dpi=1000)
-
-# Bring window to the front (above pycharm)
-fig.canvas.manager.window.activateWindow()
-fig.canvas.manager.window.raise_()
+# # All sensor data plot against time
+# df = df.set_index('datetime')
+# df_plot = df[['concentration', 'tau', 'tempC', 'humidity']]
+# df_plot.plot(subplots=True, layout=(-1, 1), figsize=(15, 10), sharex=True)
+# fig.autofmt_xdate()
+# plt.ticklabel_format(useOffset=False, axis='y')
+# plt.savefig("Data/" + sample + '/' + sample + '_overview.png', dpi=1000)
+#
+# # Bring window to the front (above pycharm)
+# fig.canvas.manager.window.activateWindow()
+# fig.canvas.manager.window.raise_()
 
 plt.show()

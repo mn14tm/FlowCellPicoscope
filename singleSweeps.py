@@ -21,6 +21,8 @@ from threading import Thread
 timestamp = 0
 tempC = 0
 humidity = 0
+t_in = 0
+t_out = 0
 
 
 def mono_exp_decay(t, a, tau, c):
@@ -45,11 +47,14 @@ def fit_decay(t, y):
 
 
 class DecayMeasure:
-    def __init__(self, chip="None", medium="Air", concentration=np.nan):
+    def __init__(self, chip, current, power, medium="Air", concentration=np.nan):
         self.ps = ps5000a.PS5000a(connect=False)
         self.chip = chip
         self.medium = medium
         self.concentration = concentration
+        self.current = current
+        self.power = power
+        self.medium = medium
 
     def openScope(self):
         self.ps.open()
@@ -58,7 +63,7 @@ class DecayMeasure:
         self.ps.setResolution(str(bitRes))
         print("Resolution =  %d Bit" % bitRes)
 
-        self.ps.setChannel("A", coupling="DC", VRange=2, VOffset=-1.8, enabled=True)
+        self.ps.setChannel("A", coupling="DC", VRange=10, VOffset=-8, enabled=True)
         self.ps.setChannel("B", coupling="DC", VRange=5.0, VOffset=0, enabled=False)
         self.ps.setSimpleTrigger(trigSrc="External", threshold_V=2.0, direction="Falling", timeout_ms=5000)
 
@@ -147,6 +152,8 @@ class DecayMeasure:
         if not os.path.exists(directory):
             os.makedirs(directory)
 
+        # Allow arduino to collect measurements
+        time.sleep(3)
         # Collect and save data for each sweep
         for i in tqdm(range(sweeps)):
 
@@ -161,6 +168,8 @@ class DecayMeasure:
 
             rawLog = {"timeID": timestamp,
                       "chip": self.chip,
+                      "current": self.current,
+                      "power": self.power,
                       "medium": self.medium,
                       "concentration": self.concentration,
                       "fs": self.res[0],
@@ -169,7 +178,9 @@ class DecayMeasure:
                       "sweep_no": i,
                       "datetime": dt,
                       "tempC": tempC,
-                      "humidity": humidity}
+                      "humidity": humidity,
+                      "thermocouple_in": t_in,
+                      "thermocouple_out": t_out}
             rawLog = pd.DataFrame(rawLog, index=[0])
             storeRaw.put('log/', rawLog)
 
@@ -201,20 +212,20 @@ def ambientLogger():
     # Setup serial monitor for arduino
     ser = serial.Serial(
         port=port,
-        baudrate=19200,
+        baudrate=115200,
         timeout=1
     )
 
     # global tempC, humidity
 
-    buffer_string = ''
-    while True:
-        buffer_string += ser.read(ser.inWaiting()).decode('utf-8')
-        if '\n' in buffer_string:
-            lines = buffer_string.split('\n')  # Guaranteed to have at least 2 entries
-            last_received = lines[-2]
-            # Extract data from string
-            [tempC, humidity] = re.findall("\d+\.\d+", last_received)
+    # buffer_string = ''
+    # while True:
+    #     buffer_string += ser.read(ser.inWaiting()).decode('utf-8')
+    #     if '\n' in buffer_string:
+    #         lines = buffer_string.split('\n')  # Guaranteed to have at least 2 entries
+    #         last_received = lines[-2]  # Remove \n and \r
+    #         # Extract data from string
+    #         [tempC, humidity, t_in, t_out] = re.findall("\d+\.\d+\.\d+\.\d+", last_received)
 
 
 def analyseData():
@@ -299,57 +310,31 @@ def analyseData():
     plt.show()
 
 
-def setConcentration(i):
-    if i == 0:
-        return 0
-    elif i == 2:
-        return 2
-    elif i == 4:
-        return 4
-    elif i == 6:
-        return 6
-    elif i == 8:
-        return 8
-    elif i == 10:
-        return 10
-    elif i == 12:
-        return 12
-    elif i == 14:
-        return 14
-    elif i == 16:
-        return 16
-    elif i == 20:
-        return 20
-    elif i == 50:
-        return 50
-    else:
-        print("Error")
-        exit()
-
-
 def run():
-    chip = 'T22'
+    chip = 'T15'
+    current = 0.5  # Laser drive current(A)
+    power = 0.32  # power at the photodiode (W)
 
     medium = 'Air'
     concentration = np.nan
     # concentration = 0.1
     # medium = 'Water'
-    # concentration = setConcentration(0)
+    # concentration = 0
 
     print("Measuring concentration {}".format(concentration))
 
-    dm = DecayMeasure(chip, medium, concentration)
+    dm = DecayMeasure(chip, current, power, medium, concentration)
     dm.openScope()
-    dm.single_sweeps(sweeps=6)
+    dm.single_sweeps(sweeps=60)
     dm.closeScope()
 
 if __name__ == "__main__":
 
    # Show a single sweep with the fit
-    dm = DecayMeasure()
-    dm.openScope()
-    dm.show_signal()
-    dm.closeScope()
+   #  dm = DecayMeasure()
+   #  dm.openScope()
+   #  dm.show_signal()
+   #  dm.closeScope()
 
    # Capture and fit single sweeps while logging temperature
     thread1 = Thread(target=run)
