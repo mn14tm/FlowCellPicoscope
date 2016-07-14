@@ -27,6 +27,7 @@ def main():
             # Extract data from string
             [tempC, humidity, t_in, t_out] = re.findall(r"\d+\.\d+", last_received)
             buffer_string = ''
+            print(tempC, humidity, t_in, t_out)
         # time.sleep(1)
 
 if __name__ == "__main__":
