@@ -26,13 +26,13 @@ def fit_decay(t, y):
     """ Function to fit the data, y, to the mono-exponential decay."""
     # Guess initial fitting parameters
     a_guess = max(y) - min(y)
+    c_guess = min(y)
 
     y_norm = y - min(y)
     y_norm = y_norm / max(y_norm)
     t_loc = np.where(y_norm <= 1/np.e)
     tau_guess = t[t_loc[0][0]]
 
-    c_guess = min(y)
     # Fit decay
     popt, pcov = curve_fit(mono_exp_decay, t, y, p0=(a_guess, tau_guess, c_guess))
     return popt
@@ -207,7 +207,7 @@ class Arduino:
             # print(self.tempC, self.humidity, self.t_in, self.t_out)
 
     def log_arduino(self):
-        ## Used when arduino is constantly pumping out updates (i.e. threading required)
+        # Used when arduino is constantly pumping out updates (i.e. threading required)
         buffer_string = ''
         while True:
             buffer_string += self.ser.read(self.ser.inWaiting()).decode('utf-8')
@@ -218,6 +218,17 @@ class Arduino:
                 [self.tempC, self.humidity, self.t_in, self.t_out] = re.findall(r"\d+\.\d+", last_received)
                 buffer_string = ''  # Reset buffer string
                 print(self.tempC, self.humidity, self.t_in, self.t_out)
+
+
+class SyringePump:
+    def __init__(self):
+        super(SyringePump, self).__init__()
+        # Setup serial port to communicate with arduino
+        self.syringe_pump = serial.Serial(
+            port='COM3',
+            baudrate=115200,
+            timeout=5
+        )
 
 
 class System(Picoscope, Arduino):
@@ -415,10 +426,8 @@ if __name__ == "__main__":
 
     medium = 'Air'
     # medium = 'Water'
-    concentration = np.nan
-    # medium = 'water intralipid water intralipid(%%)'
-    # concentration = 7
     # medium = 'Aqueous Glucose (%% Weight)'
+    concentration = np.nan
     # concentration = 48
     print("Measuring concentration: {conc}".format(conc=concentration))
 
