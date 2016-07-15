@@ -1,6 +1,6 @@
 import serial
 import time
-
+from enum import Enum     # for enum34, or the stdlib version
 
 def format_command(address, command):
     """
@@ -55,24 +55,17 @@ class CommandError(Error):
         self.msg = msg
 
         if msg == "?":
-            self.type = CommandError.NOT_RECOGNISED
+            self.type = "Command not recognised"
         elif msg == "?NA":
-            self.type = CommandError.NOT_APPLICABLE
+            self.type = "Command not currently applicable"
         elif msg == "?OOR":
-            self.type = CommandError.OUT_OF_RANGE
+            self.type = "Command data out of range"
         elif msg == "?COM":
-            self.type = CommandError.INVALID_PACKET
+            self.type = "Invalid command packet"
         elif msg == "?O":
-            self.type = CommandError.IGNORED
+            self.type = "Command ignored (simultaneous phase start)"
 
         Error.__init__(self, self.type)
-
-
-CommandError.NOT_RECOGNISED = "Command not recognised"
-CommandError.NOT_APPLICABLE = "Command not currently applicable"
-CommandError.OUT_OF_RANGE = "Command data out of range"
-CommandError.INVALID_PACKET = "Invalid command packet"
-CommandError.IGNORED = "Command ignored (simultaneous phase start)"
 
 
 class SyringePump:
@@ -90,6 +83,7 @@ class SyringePump:
     def send_command(self, address, command):
         command = format_command(address, command)
         self.syringe_pump.write(str.encode(command))
+        time.sleep(0.1)
 
     def get_response(self):
         buffer_string = ''
@@ -99,8 +93,27 @@ class SyringePump:
         print(last_received)
 
 
+class Liquid(Enum):
+    Water = 1
+    Intralipid = 2
+
+
 if __name__ == "__main__":
+    water = Liquid.Water.value
+    intralipid = Liquid.Intralipid.value
+
     pump = SyringePump()
-    pump.send_command(1, 'RUN')
+    # Set Syringe Diameter for 60ml syringe
+    pump.send_command(water, 'DIA 26.59')
+    pump.send_command(intralipid, 'DIA 26.59')
+
+    # Set Flow Rate to 1 ml/min
+    pump.send_command(water, 'RAT 5 MM')
+    pump.send_command(intralipid, 'RAT 3 MM')
+
+    pump.send_command(water, 'RUN')
+    pump.send_command(intralipid, 'RUN')
     time.sleep(3)
-    pump.send_command(1, 'STP')
+    pump.send_command(water, 'STP')
+    pump.send_command(intralipid, 'STP')
+    print('Done')
