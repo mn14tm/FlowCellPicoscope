@@ -33,7 +33,7 @@ def fit_decay(t, y):
     return popt
 
 
-files = gb.glob('Data/**/*.h5', recursive=True)
+files = gb.glob('Data/Collimated Beam/**/*.h5', recursive=True)
 
 df = pd.DataFrame()
 for file in tqdm(files):
@@ -82,10 +82,10 @@ df = df.set_index('datetime').sort_index()
 df = df.reset_index()
 
 # Save df
-store = pd.HDFStore('store.h5')
+store = pd.HDFStore('store_collimated.h5')
 store['df'] = df  # save it
 # store['df']  # load it
 
 store.close()
 
-df.to_csv('store.csv')
+df.to_csv('store_collimated.csv')

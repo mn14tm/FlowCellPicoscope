@@ -2,6 +2,7 @@ import numpy as np
 
 from LabOnChip.Devices.System import System
 from LabOnChip.HelperFunctions import analysis
+from LabOnChip.HelperFunctions import dilution
 from datetime import datetime
 
 

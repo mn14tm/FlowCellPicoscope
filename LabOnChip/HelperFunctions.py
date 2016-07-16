@@ -28,6 +28,15 @@ def fit_decay(t, y):
     popt, pcov = curve_fit(mono_exp_decay, t, y, p0=(a_guess, tau_guess, c_guess))
     return popt
 
+
+def dilution(conc_out, conc_stock, vol_out=1):
+    # Volume of stock required
+    vol_stock = vol_out * conc_out / conc_stock
+    # Volume of dilute required
+    vol_dilute = vol_out - vol_stock
+    return vol_dilute, vol_stock
+
+
 def analysis(timestamp):
     # Analyse data in the folder named timestamp kwarg
 

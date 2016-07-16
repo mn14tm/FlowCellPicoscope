@@ -47,7 +47,8 @@ class System(Picoscope, Arduino, SyringePump):
 
         # Do plots
         fig, (ax1, ax2) = plt.subplots(2,figsize=(15, 15), sharex=False)
-        timer = fig.canvas.new_timer(interval=3000) # creating a timer object and setting an interval of 3000 milliseconds
+        # creating a timer object and setting an interval of 3000 milliseconds
+        timer = fig.canvas.new_timer(interval=3000)
         timer.add_callback(plt.close)
 
         ax1.set_title("Lifetime is {0:.4f} $\pm$ {1:.4f} ms".format(popt[1], standd))

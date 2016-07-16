@@ -1,6 +1,7 @@
 import serial
 import time
 from enum import Enum     # for enum34, or the stdlib version
+from LabOnChip.HelperFunctions import dilution
 
 def format_command(address, command):
     """
@@ -102,18 +103,27 @@ if __name__ == "__main__":
     water = Liquid.Water.value
     intralipid = Liquid.Intralipid.value
 
+    conc_stock = 20  # % IL
+
     pump = SyringePump()
     # Set Syringe Diameter for 60ml syringe
     pump.send_command(water, 'DIA 26.59')
     pump.send_command(intralipid, 'DIA 26.59')
 
-    # Set Flow Rate to 1 ml/min
-    pump.send_command(water, 'RAT 5 MM')
-    pump.send_command(intralipid, 'RAT 3 MM')
+    # Set Flow Rate to desired dilution (ml/min)
+    conc_out = 10  # % IL Out
+    # Alternate (0 - 20)
+    # for conc_out in range(20):
+
+    [vol_dilute, vol_stock] = dilution(conc_out, conc_stock, vol_out=1)
+    pump.send_command(water, 'RAT {:.2f} MM'.format(vol_dilute))
+    pump.send_command(intralipid, 'RAT {:.2f} MM'.format(vol_stock))
 
     pump.send_command(water, 'RUN')
     pump.send_command(intralipid, 'RUN')
-    time.sleep(3)
+    #
+    # Run picoscope for 60 seconds / 200 sweeps
+    #
     pump.send_command(water, 'STP')
     pump.send_command(intralipid, 'STP')
     print('Done')
