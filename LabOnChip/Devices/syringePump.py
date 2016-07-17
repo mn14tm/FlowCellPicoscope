@@ -1,7 +1,6 @@
 import serial
 import time
-from enum import Enum     # for enum34, or the stdlib version
-from LabOnChip.HelperFunctions import dilution
+
 
 def format_command(address, command):
     """
@@ -72,7 +71,7 @@ class CommandError(Error):
 class SyringePump:
     def __init__(self):
         super(SyringePump, self).__init__()
-        # Setup serial port to communicate with arduino
+        # Setup serial port to communicate with Aladdin Syringe Pump
         self.syringe_pump = serial.Serial(
             port='COM4',
             baudrate=19200,
@@ -84,46 +83,11 @@ class SyringePump:
     def send_command(self, address, command):
         command = format_command(address, command)
         self.syringe_pump.write(str.encode(command))
+        # Delay between sending commands to let pumps receive
         time.sleep(0.1)
 
     def get_response(self):
         buffer_string = ''
         buffer_string += self.syringe_pump.read(self.syringe_pump.inWaiting()).decode('utf-8')
-        # if '\n' in buffer_string:
         last_received = buffer_string  # [:-2]  # Remove \n and \r
         print(last_received)
-
-
-class Liquid(Enum):
-    Water = 1
-    Intralipid = 2
-
-
-if __name__ == "__main__":
-    water = Liquid.Water.value
-    intralipid = Liquid.Intralipid.value
-
-    conc_stock = 20  # % IL
-
-    pump = SyringePump()
-    # Set Syringe Diameter for 60ml syringe
-    pump.send_command(water, 'DIA 26.59')
-    pump.send_command(intralipid, 'DIA 26.59')
-
-    # Set Flow Rate to desired dilution (ml/min)
-    conc_out = 10  # % IL Out
-    # Alternate (0 - 20)
-    # for conc_out in range(20):
-
-    [vol_dilute, vol_stock] = dilution(conc_out, conc_stock, vol_out=1)
-    pump.send_command(water, 'RAT {:.2f} MM'.format(vol_dilute))
-    pump.send_command(intralipid, 'RAT {:.2f} MM'.format(vol_stock))
-
-    pump.send_command(water, 'RUN')
-    pump.send_command(intralipid, 'RUN')
-    #
-    # Run picoscope for 60 seconds / 200 sweeps
-    #
-    pump.send_command(water, 'STP')
-    pump.send_command(intralipid, 'STP')
-    print('Done')

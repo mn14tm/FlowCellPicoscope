@@ -9,11 +9,9 @@ from tqdm import tqdm
 from datetime import datetime
 from LabOnChip.Devices.Picoscope import Picoscope
 from LabOnChip.Devices.Arduino import Arduino
-from LabOnChip.Devices.SyringePump import SyringePump
-from LabOnChip.HelperFunctions import fit_decay, mono_exp_decay
 
 
-class System(Picoscope, Arduino, SyringePump):
+class System(Picoscope, Arduino):
     def __init__(self, *args, **kwargs):
         # Initialise super classes
         super(System, self).__init__(*args, **kwargs)
@@ -23,62 +21,15 @@ class System(Picoscope, Arduino, SyringePump):
         self.current = kwargs['current']
         self.power = kwargs['power']
         self.medium = kwargs['medium']
-        self.concentration = kwargs['concentration']
         self.timestamp = kwargs['timestamp']
+        self.concentration = np.nan
 
-    def show_signal(self):
-        """ Measure a single decay and show with the fit in a plot. """
-        self.openScope()
-
-        # Create a time axis for the plots
-        self.x = np.arange(self.res[1]) * self.res[0]
-        # Convert time axis to milliseconds
-        self.x *= 1E3
-
-        # Collect data
-        self.armMeasure()
-        data = self.measure()
-        self.closeScope()
-
-        # Calculate lifetime
-        popt = fit_decay(self.x, data)
-        residuals = data - mono_exp_decay(self.x, *popt)
-        standd = np.std(residuals)
-
-        # Do plots
-        fig, (ax1, ax2) = plt.subplots(2,figsize=(15, 15), sharex=False)
-        # creating a timer object and setting an interval of 3000 milliseconds
-        timer = fig.canvas.new_timer(interval=3000)
-        timer.add_callback(plt.close)
-
-        ax1.set_title("Lifetime is {0:.4f} $\pm$ {1:.4f} ms".format(popt[1], standd))
-
-        ax1.plot(self.x, data, 'k.', label="Original Noised Data")
-        ax1.plot(self.x, mono_exp_decay(self.x, *popt), 'r-', label="Fitted Curve")
-        ax1.axvline(popt[1], color='blue')
-        ax1.grid(True, which="major")
-        ax1.set_ylabel('Intensity (A.U.)')
-        ax1.set_xlim(0, max(self.x))
-        ax1.axhline(y=0, color='k')
-        ax1.legend()
-
-        ax2.set_xlabel("Time (ms)")
-        ax2.set_ylabel('Residuals')
-        ax2.axhline(y=0, color='k')
-        ax2.plot(self.x, residuals)
-        ax2.set_xlim(0,max(self.x))
-        ax2.grid(True, which="major")
-
-        # Bring window to the front (above pycharm)
-        fig.canvas.manager.window.activateWindow()
-        fig.canvas.manager.window.raise_()
-
-        timer.start()
-        plt.show()
+    def set_concentration(self, concentration):
+        """ Set concentration of medium being tested. """
+        self.concentration = concentration
 
     def sweeps_number(self, sweeps):
         """ Measure and save single sweeps. """
-        self.openScope()
 
         # Make directory to store files
         directory = "Data/" + str(self.timestamp) + "/raw"
@@ -139,11 +90,8 @@ class System(Picoscope, Arduino, SyringePump):
         except:
             pass
 
-        self.closeScope()
-
     def sweeps_time(self, mins):
         """ Measure and save single sweeps over a given run_time. """
-        self.openScope()
 
         # Make directory to store files
         directory = "Data/" + str(self.timestamp) + "/raw"
@@ -199,4 +147,3 @@ class System(Picoscope, Arduino, SyringePump):
             storeRaw.put('data/', rawData)
             storeRaw.close()
 
-        self.closeScope()
