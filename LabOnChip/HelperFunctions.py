@@ -38,7 +38,7 @@ def dilution(conc_out, conc_stock, vol_out=1):
 
 
 def analysis(timestamp):
-    # Analyse data in the folder named timestamp kwarg
+    # Analyse data in the folder named timestamp
 
     # Empty data frame to append results to
     df = pd.DataFrame()
@@ -79,6 +79,10 @@ def analysis(timestamp):
 
     # Save dataframe
     df.to_csv("Data/" + str(timestamp) + "/analysis.csv")
+
+    store = pd.HDFStore("Data/" + str(timestamp) + "/analysis.h5")
+    store['df'] = df  # save it
+    store.close()
 
     # Create plot of lifetime vs time
     fig, ax = plt.subplots()
