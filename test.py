@@ -2,19 +2,12 @@ import serial
 import time
 import numpy as np
 
-from enum import Enum     # for enum34, or the stdlib version
 from LabOnChip.HelperFunctions import dilution
 from LabOnChip.Devices.System import System
 from LabOnChip.Devices.SyringePump import SyringePump
 from LabOnChip.HelperFunctions import analysis
 from LabOnChip.HelperFunctions import dilution
 from datetime import datetime
-
-
-class Liquid(Enum):
-    # Pump IDs to make easier to read code
-    Water = 1
-    Intralipid = 2
 
 
 if __name__ == "__main__":
@@ -25,7 +18,7 @@ if __name__ == "__main__":
 
     # Excitation signal
     current = 0.5  # Laser drive current(A)
-    power = 0.3  # power at the photodiode (W)
+    power = 0.27  # power at the photodiode (W)
 
     # Sample
     conc_stock = 20  # % IL of stock solution
@@ -34,8 +27,8 @@ if __name__ == "__main__":
     pump = SyringePump()
 
     # Syringe Pump addresses
-    water = Liquid.Water.value
-    intralipid = Liquid.Intralipid.value
+    water = 1
+    intralipid = 2
 
     # Set Syringe Diameter for 60ml syringe
     pump.send_command(water, 'DIA 26.59')
@@ -52,13 +45,27 @@ if __name__ == "__main__":
     # Show a single sweep with the fit
     scope.show_signal()
 
+    # Flush 2 ml/min for 1 min
+    pump.send_command(water, 'RAT 2 MM')
+    pump.send_command(water, 'RUN')
+    time.sleep(60)
+    pump.send_command(water, 'STP')
+
+    # Clear dispensed volume
+    pump.send_command(water, 'CLD INF')
+    pump.send_command(intralipid, 'CLD INF')
     # Set Flow Rate to desired dilution (ml/min)
-    for conc_out in range(20):
+    for conc_out in np.linspace(start=0, stop=conc_stock, endpoint=True, num=11):
+
         # Update concentration to save to data files
         scope.set_concentration(conc_out)
 
         # Calculate ratio of stock and dilute flow rates
         [vol_dilute, vol_stock] = dilution(conc_out, conc_stock, vol_out=flow_rate)
+
+        # Print
+        print('Concentration is {conc:.2f}, flow rate of water {dilute:.2f} and IL {intra:.2f} ml/min'
+              .format(conc=conc_out, dilute=vol_dilute, intra=vol_stock))
 
         # Send to pumps
         pump.send_command(water, 'RAT {:.2f} MM'.format(vol_dilute))
@@ -67,13 +74,14 @@ if __name__ == "__main__":
         pump.send_command(intralipid, 'RUN')
 
         # Capture and fit single sweeps
-        scope.sweeps_number(sweeps=20)
-        # scope.sweeps_time(mins=1)
+        # scope.sweeps_number(sweeps=50)
+        scope.sweeps_time(mins=4)
+
+        pump.send_command(water, 'STP')
+        pump.send_command(intralipid, 'STP')
 
     # Stop and close all instruments
     scope.closeScope()
-    pump.send_command(water, 'STP')
-    pump.send_command(intralipid, 'STP')
     print('Done')
 
     # Analyse Data

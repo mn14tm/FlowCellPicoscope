@@ -3,7 +3,7 @@ import matplotlib.dates as mdates
 import pandas as pd
 import matplotlib.pyplot as plt
 import glob as gb
-
+from tqdm import tqdm
 from scipy.optimize import curve_fit
 
 
@@ -44,7 +44,7 @@ def analysis(timestamp):
     df = pd.DataFrame()
 
     # for folder in timestamped folder folder:
-    for file in gb.glob("Data/" + str(timestamp) + "/raw/*.h5"):
+    for file in tqdm(gb.glob("Data/" + str(timestamp) + "/raw/*.h5")):
         # print("Analysing file:" + file)
 
         # Load HDF file

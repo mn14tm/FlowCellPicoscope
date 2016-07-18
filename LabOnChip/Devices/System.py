@@ -24,6 +24,8 @@ class System(Picoscope, Arduino):
         self.timestamp = kwargs['timestamp']
         self.concentration = np.nan
 
+        self.request_arduino_data()
+
     def set_concentration(self, concentration):
         """ Set concentration of medium being tested. """
         self.concentration = concentration
@@ -41,7 +43,7 @@ class System(Picoscope, Arduino):
         # elapsed = []
         for i in tqdm(range(sweeps)):
 
-            if time.time() - start > 2:
+            if time.time() - start > 3:
                 self.get_arduino_data()
                 self.request_arduino_data()
                 start = time.time()
@@ -54,10 +56,10 @@ class System(Picoscope, Arduino):
             #####
             # start_time = timeit.default_timer()
             #####
-            fname = directory + "/" + str(self.timestamp) + "_" + str(i) + ".h5"
+            fname = directory + "/" + str(datetime.now().timestamp()) + ".h5"
             storeRaw = pd.HDFStore(fname)
 
-            rawLog = {"timeID": self.timestamp,
+            rawLog = {"measurementID": self.timestamp,
                       "chip": self.chip,
                       "current": self.current,
                       "power": self.power,
@@ -99,7 +101,7 @@ class System(Picoscope, Arduino):
             os.makedirs(directory)
 
         # Collect and save data for each sweep
-        self.request_arduino_data()
+        # self.request_arduino_data()
         sweep = 0
 
         timeout = time.time() + 60*mins  # mins minutes from now
@@ -121,10 +123,10 @@ class System(Picoscope, Arduino):
             dt = datetime.now()
             data = self.measure()
 
-            fname = directory + "/" + str(self.timestamp) + "_" + str(sweep) + ".h5"
+            fname = directory + "/" + str(datetime.now().timestamp()) + ".h5"
             storeRaw = pd.HDFStore(fname)
 
-            rawLog = {"timeID": self.timestamp,
+            rawLog = {"measurementID": self.timestamp,
                       "chip": self.chip,
                       "current": self.current,
                       "power": self.power,

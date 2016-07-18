@@ -1,4 +1,6 @@
 import time
+import numpy as np
+import matplotlib.pyplot as plt
 
 from picoscope import ps5000a
 from LabOnChip.HelperFunctions import fit_decay, mono_exp_decay
