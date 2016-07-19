@@ -16,7 +16,7 @@ def format_command(address, command):
         raise SyntaxError("Invalid Address: %s" % address)
     if address is not None:
         command = "{:02d}{:s}\r\n".format(address, command)
-        print(command)
+        # print(command)
     return command
 
 
@@ -78,7 +78,7 @@ class SyringePump:
             timeout=3
         )
         # Allow serial connection time to setup
-        time.sleep(2)
+        time.sleep(2)  # Could make shorter?
 
     def send_command(self, address, command):
         command = format_command(address, command)

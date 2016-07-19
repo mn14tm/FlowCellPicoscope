@@ -1,4 +1,3 @@
-import serial
 import time
 import numpy as np
 
@@ -16,15 +15,14 @@ if __name__ == "__main__":
     timestamp = datetime.now().timestamp()  # Unique measurement ID
 
     # Excitation signal
-    current = 0.2  # Laser drive current(A)
-    power = 0.10  # power at the photodiode (W)
+    current = 0.5  # Laser drive current(A)
+    power = 0.27  # power at the photodiode (W)
 
     # Sample
     conc_stock = 20  # % IL of stock solution
     flow_rate = 1  # Flow rate over photonic chip (ml/min)
 
     pump = SyringePump()
-
     # Syringe Pump addresses
     water = 1
     intralipid = 2
@@ -53,8 +51,9 @@ if __name__ == "__main__":
     # Clear dispensed volume
     pump.send_command(water, 'CLD INF')
     pump.send_command(intralipid, 'CLD INF')
+
     # Set Flow Rate to desired dilution (ml/min)
-    for conc_out in np.linspace(start=0, stop=conc_stock, endpoint=True, num=21):
+    for conc_out in [0, conc_stock, 0, conc_stock, 0]:
         # Update concentration to save to data files
         scope.set_concentration(conc_out)
 
@@ -73,7 +72,7 @@ if __name__ == "__main__":
 
         # Capture and fit single sweeps
         # scope.sweeps_number(sweeps=50)
-        scope.sweeps_time(mins=4)
+        scope.sweeps_time(mins=15)
 
         pump.send_command(water, 'STP')
         pump.send_command(intralipid, 'STP')

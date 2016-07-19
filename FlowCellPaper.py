@@ -33,8 +33,8 @@ if __name__ == "__main__":
     # dm.show_signal()
 
     # Capture and fit single sweeps while logging temperature
-    dm.sweeps_number(sweeps=20)
-    # dm.sweeps_time(mins=1)
+    # dm.sweeps_number(sweeps=100)
+    dm.sweeps_time(mins=1)
 
     print("Analysing data files...")
     analysis(timestamp=timestamp)
