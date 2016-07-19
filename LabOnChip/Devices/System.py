@@ -24,8 +24,6 @@ class System(Picoscope, Arduino):
         self.timestamp = kwargs['timestamp']
         self.concentration = np.nan
 
-        self.request_arduino_data()
-
     def set_concentration(self, concentration):
         """ Set concentration of medium being tested. """
         self.concentration = concentration

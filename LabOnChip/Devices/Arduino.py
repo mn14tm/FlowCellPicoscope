@@ -2,6 +2,7 @@ import serial
 import time
 import re
 
+
 class Arduino:
     def __init__(self):
         super(Arduino, self).__init__()
@@ -25,6 +26,7 @@ class Arduino:
         self.request_arduino_data()
         time.sleep(3)
         self.get_arduino_data()
+        self.request_arduino_data()
 
     def request_arduino_data(self):
         # Serial request temperature, humidity and thermocouple data (ArduinoV3)

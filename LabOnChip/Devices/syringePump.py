@@ -83,7 +83,7 @@ class SyringePump:
     def send_command(self, address, command):
         command = format_command(address, command)
         self.syringe_pump.write(str.encode(command))
-        # Delay between sending commands to let pumps receive
+        # Delay between sending commands to allow pump to receive and process
         time.sleep(0.1)
 
     def get_response(self):

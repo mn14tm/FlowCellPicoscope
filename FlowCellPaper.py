@@ -28,13 +28,15 @@ if __name__ == "__main__":
                 medium=medium,
                 concentration=concentration,
                 timestamp=timestamp)
-
+    dm.openScope()
     # # Show a single sweep with the fit
     # dm.show_signal()
 
     # Capture and fit single sweeps while logging temperature
     # dm.sweeps_number(sweeps=100)
     dm.sweeps_time(mins=1)
+
+    dm.closeScope()
 
     print("Analysing data files...")
     analysis(timestamp=timestamp)
