@@ -12,6 +12,12 @@ class ITC4001:
     def setup(self):
         # Set TEC setpoint
         self.inst.write('SOUR:TEMP 25C')
+        # Set LD current limit
+        self.inst.write('SOUR:CURR:LIM 1.5')
+        # Set LD current setpoint
+        self.inst.write('SOUR:CURR 0.5')
+        # # Set TEC setpoint
+        # self.inst.write('')
 
     def save_config(self):
         self.inst.write('*SAV 1')
