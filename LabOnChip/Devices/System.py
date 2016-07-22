@@ -19,7 +19,6 @@ class System(Picoscope, Arduino):
         # Measurement Data
         self.chip = kwargs['chip']
         self.current = kwargs['current']
-        self.power = kwargs['power']
         self.medium = kwargs['medium']
         self.timestamp = kwargs['timestamp']
         self.concentration = np.nan
@@ -27,6 +26,53 @@ class System(Picoscope, Arduino):
     def set_concentration(self, concentration):
         """ Set concentration of medium being tested. """
         self.concentration = concentration
+
+    def set_power(self, power):
+        # TODO: remove
+        self.power = power
+
+    def single_sweep(self):
+
+        # Make directory to store files
+        directory = "Data/" + str(self.timestamp) + "/raw"
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        self.get_arduino_data()
+        time.sleep(3)
+        self.request_arduino_data()
+
+        # Collect data
+        self.armMeasure()
+        dt = datetime.now()
+        data = self.measure()
+
+        #####
+        # start_time = timeit.default_timer()
+        #####
+        fname = directory + "/" + str(datetime.now().timestamp()) + ".h5"
+        storeRaw = pd.HDFStore(fname)
+
+        rawLog = {"measurementID": self.timestamp,
+                  "chip": self.chip,
+                  "current": self.current,
+                  "power": self.power,
+                  "medium": self.medium,
+                  "concentration": self.concentration,
+                  "fs": self.res[0],
+                  "sample_no": self.res[1],
+                  "datetime": dt,
+                  "tempC": self.tempC,
+                  "humidity": self.humidity,
+                  "thermocouple_in": self.t_in,
+                  "thermocouple_out": self.t_out
+                  }
+        rawLog = pd.DataFrame(rawLog, index=[0])
+        storeRaw.put('log/', rawLog)
+
+        rawData = pd.Series(data)
+        storeRaw.put('data/', rawData)
+        storeRaw.close()
 
     def sweeps_number(self, sweeps):
         """ Measure and save single sweeps. """
@@ -94,7 +140,7 @@ class System(Picoscope, Arduino):
         """ Measure and save single sweeps over a given run_time. """
 
         # Make directory to store files
-        directory = "Data/" + str(self.timestamp) + "/raw"
+        directory = "../Data/" + str(self.timestamp) + "/raw"
         if not os.path.exists(directory):
             os.makedirs(directory)
 

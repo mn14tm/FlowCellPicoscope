@@ -15,28 +15,29 @@ if __name__ == "__main__":
     timestamp = datetime.now().timestamp()  # Unique measurement ID
 
     # Excitation signal
-    current = 0.2  # Laser drive current(A)
-    power = 0.10  # power at the photodiode (W)
+    current = 0.5  # Laser drive current(A)
+    power = 0.27  # power at the photodiode (W)
 
-    # Liquid Sample
-    conc_stock = 20  # % IL of stock solution
+    # Sample
+    conc_stock = 10  # % IL of stock solution
     flow_rate = 1  # Flow rate over photonic chip (ml/min)
 
-    # Syringe Pump Setup
     pump = SyringePump()
+
     # Syringe Pump addresses
     water = 1
     intralipid = 2
+
     # Set Syringe Diameter for 60ml syringe
     pump.send_command(water, 'DIA 26.59')
     pump.send_command(intralipid, 'DIA 26.59')
 
-    # Picoscope setup for logging
+    # Setup picoscope for logging
     scope = System(chip=chip,
-                   current=current,
-                   power=power,
-                   medium=medium,
-                   timestamp=timestamp)
+                current=current,
+                power=power,
+                medium=medium,
+                timestamp=timestamp)
     scope.openScope()
 
     # Show a single sweep with the fit
@@ -51,7 +52,6 @@ if __name__ == "__main__":
     # Clear dispensed volume
     pump.send_command(water, 'CLD INF')
     pump.send_command(intralipid, 'CLD INF')
-
     # Set Flow Rate to desired dilution (ml/min)
     for conc_out in np.linspace(start=0, stop=conc_stock, endpoint=True, num=21):
         # Update concentration to save to data files
@@ -72,7 +72,7 @@ if __name__ == "__main__":
 
         # Capture and fit single sweeps
         # scope.sweeps_number(sweeps=50)
-        scope.sweeps_time(mins=4)
+        scope.sweeps_time(mins=5)
 
         pump.send_command(water, 'STP')
         pump.send_command(intralipid, 'STP')

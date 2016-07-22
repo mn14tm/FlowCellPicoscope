@@ -1,29 +1,26 @@
 import visa
 
+
 class ITC4001:
     def __init__(self, *args, **kwargs):
         super(ITC4001, self).__init__()
         rm = visa.ResourceManager()
-        rm.list_resources()
-        # ('ASRL1::INSTR', 'ASRL2::INSTR', 'GPIB0::12::INSTR')
-        self.inst = rm.open_resource('GPIB0::12::INSTR')
-        print(self.inst.query("*IDN?"))  # What are you?
+        # rm.list_resources()
+        self.inst = rm.open_resource('USB0::0x1313::0x804A::M00315699::INSTR')
+        # print(self.inst.query("*IDN?"))  # What are you?
 
     def setup(self):
         # Set TEC setpoint
         self.inst.write('SOUR:TEMP 25C')
-        # Set LD current limit
-        self.inst.write('SOUR:CURR:LIM 1.5')
+
         # Set LD current setpoint
         self.inst.write('SOUR:CURR 0.5')
         # # Set TEC setpoint
         # self.inst.write('')
 
-    def save_config(self):
-        self.inst.write('*SAV 1')
-
-    def load_config(self):
-        self.inst.write('*RCL 1')
+    def set_ld_current(self, current):
+        # Set LD current limit
+        self.inst.write('SOUR:CURR:LIM {:.2f}'.format(current))
 
     def turn_ld_on(self):
         self.inst.write('OUTP ON')
@@ -43,8 +40,9 @@ class ITC4001:
         # Set trigger source to internal
         self.inst.write('TRIG:SOUR INT')
 
+def save_config(self, loc=1):
+    self.inst.write('*SAV {:s}'.format(loc))
 
 
-if __name__ == "__main__":
-    laserDriver = ITC4001()
-    laserDriver.get_optical_power()
+def load_config(self, loc=1):
+    self.inst.write('*RCL {:s}'.format(loc))

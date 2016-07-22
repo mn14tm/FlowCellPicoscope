@@ -114,6 +114,7 @@ void processSerial(){
     Serial.println(" C.");
   }
   else if(serialStr.equals("SHT")){
+    readSHT();
     Serial.print("Ambient Temp ");
     Serial.print(tempC);
     Serial.print(" C and humidity ");
@@ -121,6 +122,8 @@ void processSerial(){
     Serial.println(" %");
   }
   else if(serialStr.equals("TK")){
+    t_in = readThermocouple(inThermocouple);
+    t_out = readThermocouple(outThermocouple);
     Serial.print("Temperature in ");
     Serial.print(t_in);
     Serial.print(" C and temperature out ");

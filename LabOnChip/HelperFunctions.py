@@ -44,7 +44,7 @@ def analysis(timestamp):
     df = pd.DataFrame()
 
     # for folder in timestamped folder folder:
-    for file in tqdm(gb.glob("Data/" + str(timestamp) + "/raw/*.h5")):
+    for file in tqdm(gb.glob("../Data/" + str(timestamp) + "/raw/*.h5")):
         # print("Analysing file:" + file)
 
         # Load HDF file
@@ -78,9 +78,9 @@ def analysis(timestamp):
     df = df.reset_index()
 
     # Save dataframe
-    df.to_csv("Data/" + str(timestamp) + "/analysis.csv")
+    df.to_csv("../Data/" + str(timestamp) + "/analysis.csv")
 
-    store = pd.HDFStore("Data/" + str(timestamp) + "/analysis.h5")
+    store = pd.HDFStore("../Data/" + str(timestamp) + "/analysis.h5")
     store['df'] = df  # save it
     store.close()
 
@@ -102,7 +102,7 @@ def analysis(timestamp):
     # plt.tight_layout()
     plt.ticklabel_format(useOffset=False, axis='y')
 
-    plt.savefig("Data/" + str(timestamp) + '/lifetimeVsTime.png', dpi=500)
+    plt.savefig("../Data/" + str(timestamp) + '/lifetimeVsTime.png', dpi=500)
 
     # Create histogram plot
     fig2, ax2 = plt.subplots()
@@ -112,7 +112,7 @@ def analysis(timestamp):
     plt.xlabel('Lifetime (ms)')
     plt.ylabel('Frequency')
 
-    plt.savefig("Data/" + str(timestamp) + '/histogram.png', dpi=500)
+    plt.savefig("../Data/" + str(timestamp) + '/histogram.png', dpi=500)
 
     # Bring window to the front (above pycharm)
     fig.canvas.manager.window.activateWindow()
