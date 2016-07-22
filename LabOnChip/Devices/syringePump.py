@@ -73,7 +73,7 @@ class SyringePump:
         super(SyringePump, self).__init__()
         # Setup serial port to communicate with Aladdin Syringe Pump
         self.syringe_pump = serial.Serial(
-            port='COM4',
+            port='COM5',
             baudrate=19200,
             timeout=3
         )
