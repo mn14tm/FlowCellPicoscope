@@ -1,141 +1,130 @@
 import numpy as np
+import matplotlib.dates as mdates
 import pandas as pd
 import matplotlib.pyplot as plt
-import time
-import os
-import winsound
-
+import glob as gb
 from tqdm import tqdm
-from datetime import datetime
-from LabOnChip.Devices.Picoscope import Picoscope
-from LabOnChip.Devices.Arduino import Arduino
+from scipy.optimize import curve_fit
+from multiprocessing import Pool
 
 
-def sweeps_number(*args, **kwargs):
-    """ Measure and save single sweeps. """
-
-    # Measurement Data
-    sweeps = kwargs['sweeps']
-    chip = kwargs['chip']
-    current = kwargs['current']
-    power = kwargs['power']
-    medium = kwargs['medium']
-    timestamp = kwargs['timestamp']
-    concentration = np.nan
-
-    # Make directory to store files
-    directory = "Data/" + str(timestamp) + "/raw"
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    # Collect and save data for each sweep
-    start = time.time()
-    # elapsed = []
-    for i in tqdm(range(sweeps)):
-
-        if time.time() - start > 3:
-            arduino.get_arduino_data()
-            arduino.request_arduino_data()
-            start = time.time()
-
-        # Collect data
-        picoscope.armMeasure()
-        dt = datetime.now()
-        data = picoscope.measure()
-
-        #####
-        # start_time = timeit.default_timer()
-        #####
-        fname = directory + "/" + str(datetime.now().timestamp()) + ".h5"
-        storeRaw = pd.HDFStore(fname)
-
-        rawLog = {"measurementID": timestamp,
-                  "chip": chip,
-                  "current": current,
-                  "power": power,
-                  "medium": medium,
-                  "concentration": concentration,
-                  "fs": res[0],
-                  "sample_no": res[1],
-                  "sweeps": sweeps,
-                  "sweep_no": i,
-                  "datetime": dt,
-                  "tempC": tempC,
-                  "humidity": humidity,
-                  "thermocouple_in": t_in,
-                  "thermocouple_out": t_out
-                  }
-        rawLog = pd.DataFrame(rawLog, index=[0])
-        storeRaw.put('log/', rawLog)
-
-        rawData = pd.Series(data)
-        storeRaw.put('data/', rawData)
-        storeRaw.close()
-        ######
-        # elapsed.append(timeit.default_timer() - start_time)
-    # mean = np.mean(np.asarray(elapsed))
-    # std = np.std(np.asarray(elapsed))
-    # print(mean, std)
-    #####
-    try:
-        winsound.Beep(600, 1000)
-    except:
-        pass
+# Helper Functions
+def mono_exp_decay(t, a, tau, c):
+    """ Mono-exponential decay function. t is the time."""
+    return a * np.exp(-t / tau) + c
 
 
-def sweeps_time(self, mins):
-    """ Measure and save single sweeps over a given run_time. """
+def fit_decay(t, y):
+    """ Function to fit the data, y, to the mono-exponential decay."""
+    # Guess initial fitting parameters
+    a_guess = max(y) - min(y)
+    c_guess = min(y)
 
-    # Make directory to store files
-    directory = "Data/" + str(self.timestamp) + "/raw"
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+    y_norm = y - min(y)
+    y_norm = y_norm / max(y_norm)
+    t_loc = np.where(y_norm <= 1/np.e)
+    tau_guess = t[t_loc[0][0]]
 
-    # Collect and save data for each sweep
-    # self.request_arduino_data()
-    sweep = 0
+    # Fit decay
+    popt, pcov = curve_fit(mono_exp_decay, t, y, p0=(a_guess, tau_guess, c_guess))
+    return popt
 
-    timeout = time.time() + 60 * mins  # mins minutes from now
-    print("Finished at: {end}".format(end=time.asctime(time.localtime(timeout))))
-    start = time.time()
-    while True:
-        if time.time() > timeout:
-            break
-        sweep += 1
 
-        # Arduino Update every 3 seconds
-        if time.time() - start > 3:
-            self.get_arduino_data()
-            self.request_arduino_data()
-            start = time.time()
+def analysis(file):
+    # Load HDF file
+    store = pd.HDFStore(file)
 
-        # Collect data
-        self.armMeasure()
-        dt = datetime.now()
-        data = self.measure()
+    # Create time axis in ms
+    fs = store['log']['fs'][0]
+    samples = store['log']['sample_no'][0]
+    x = np.arange(samples) * fs * 1E3
 
-        fname = directory + "/" + str(datetime.now().timestamp()) + ".h5"
-        storeRaw = pd.HDFStore(fname)
+    # Load decay data
+    y = store['data']
 
-        rawLog = {"measurementID": self.timestamp,
-                  "chip": self.chip,
-                  "current": self.current,
-                  "power": self.power,
-                  "medium": self.medium,
-                  "concentration": self.concentration,
-                  "fs": self.res[0],
-                  "sample_no": self.res[1],
-                  "run_time": mins,
-                  "sweep_no": sweep,
-                  "datetime": dt,
-                  "tempC": self.tempC,
-                  "humidity": self.humidity,
-                  "thermocouple_in": self.t_in,
-                  "thermocouple_out": self.t_out
-                  }
-        rawLog = pd.DataFrame(rawLog, index=[0])
-        storeRaw.put('log/', rawLog)
+    df_file = store['log']
 
-        rawData = pd.Series(data)
-        storeRaw.put('data/', rawData)
-        storeRaw.close()
+    # Close hdf5 file
+    store.close()
+
+    # Calculate lifetime
+    popt = fit_decay(x, y)
+
+    # Append lifetime to dataframe
+    df_file['A'] = popt[0]
+    df_file['tau'] = popt[1]
+    df_file['c'] = popt[2]
+    # Add sweep data to measurement dataframe
+    # df = df.append(df_file)
+    return df_file
+
+
+def files_analysis(folder):
+    """ Use multiprocessing to analysise raw files inside the timestamp folder"""
+
+    pool = Pool()
+
+    # Get raw data files list
+    files = b.glob("../Data/" + str(folder) + "/raw/*.h5")
+
+    # Do fitting
+    results = pool.map(analysis, files)
+
+    # close the pool and wait for the work to finish
+    pool.close()
+    pool.join()
+
+    # merging parts processed by different processes
+    df = pd.concat(results, axis=0)
+
+    # # Sort rows in measurement dataframe by datetime
+    df = df.set_index('datetime').sort_index()
+    df = df.reset_index()
+
+    # # Save dataframe
+    df.to_csv("../Data/" + str(folder) + "/analysis.csv")
+
+    store = pd.HDFStore("../Data/" + str(folder) + "/analysis.h5")
+    store['df'] = df  # save it
+    store.close()
+
+    return df
+
+
+def plot_analysis(df):
+    # Create plot of lifetime vs time
+    fig, ax = plt.subplots()
+    ax.plot(df['datetime'], df['tau'], 'o', alpha=0.3)
+    # ax.plot(df['datetime'], df['tempC'], '-')
+
+    # format the ticks
+    ax.xaxis.set_major_locator(mdates.MinuteLocator())
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+    # ax.xaxis.set_minor_locator(mdates.SecondLocator(bysecond=np.arange(0, 60, 10)))
+
+    ax.grid(True)
+    fig.autofmt_xdat
+
+    plt.xlabel('Time (H:M)')
+    plt.ylabel('Lifetime (ms)')
+    # plt.tight_layout()
+    plt.ticklabel_format(useOffset=False, axis='y')
+    plt.savefig("../Data/" + str(timestamp) + '/lifetimeVsTime.png', dpi=500)
+
+    # Create histogram plot
+    fig2, ax2 = plt.subplots()
+    ax2.hist(df['tau'], bins=20)
+
+    plt.ticklabel_format(useOffset=False)
+    plt.xlabel('Lifetime (ms)')
+    plt.ylabel('Frequency')
+    plt.savefig("../Data/" + str(timestamp) + '/histogram.png', dpi=500)
+    plt.show()
+
+if __name__ == "__main__":
+
+    # Folder to analyse
+    timestamp = 1468337701.568398
+
+    df = files_analysis(timestamp)
+    plot_analysis(df)
