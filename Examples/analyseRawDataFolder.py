@@ -3,7 +3,6 @@ import matplotlib.dates as mdates
 import pandas as pd
 import matplotlib.pyplot as plt
 import glob as gb
-from tqdm import tqdm
 from scipy.optimize import curve_fit
 from multiprocessing import Pool
 
@@ -19,13 +18,7 @@ def fit_decay(t, y):
     # Guess initial fitting parameters
     a_guess = max(y) - min(y)
     c_guess = min(y)
-
-    y_norm = y - min(y)
-    y_norm = y_norm / max(y_norm)
-    t_loc = np.where(y_norm <= 1/np.e)
-    tau_guess = t[t_loc[0][0]]
-
-    # Fit decay
+    tau_guess = 10
     popt, pcov = curve_fit(mono_exp_decay, t, y, p0=(a_guess, tau_guess, c_guess))
     return popt
 
@@ -33,6 +26,7 @@ def fit_decay(t, y):
 def analysis(file):
     # Load HDF file
     store = pd.HDFStore(file)
+    df_file = store['log']
 
     # Create time axis in ms
     fs = store['log']['fs'][0]
@@ -42,30 +36,27 @@ def analysis(file):
     # Load decay data
     y = store['data']
 
-    df_file = store['log']
-
     # Close hdf5 file
     store.close()
 
     # Calculate lifetime
     popt = fit_decay(x, y)
 
-    # Append lifetime to dataframe
+    # Append lifetime to individual measurement dataframe
     df_file['A'] = popt[0]
     df_file['tau'] = popt[1]
     df_file['c'] = popt[2]
-    # Add sweep data to measurement dataframe
-    # df = df.append(df_file)
+
     return df_file
 
 
-def files_analysis(folder):
+def folder_analysis(folder):
     """ Use multiprocessing to analysise raw files inside the timestamp folder"""
 
     pool = Pool()
 
     # Get raw data files list
-    files = b.glob("../Data/" + str(folder) + "/raw/*.h5")
+    files = gb.glob("../Data/" + str(folder) + "/raw/*.h5")
 
     # Do fitting
     results = pool.map(analysis, files)
@@ -77,11 +68,11 @@ def files_analysis(folder):
     # merging parts processed by different processes
     df = pd.concat(results, axis=0)
 
-    # # Sort rows in measurement dataframe by datetime
+    # Sort rows in measurement dataframe by datetime
     df = df.set_index('datetime').sort_index()
     df = df.reset_index()
 
-    # # Save dataframe
+    # Save dataframe
     df.to_csv("../Data/" + str(folder) + "/analysis.csv")
 
     store = pd.HDFStore("../Data/" + str(folder) + "/analysis.h5")
@@ -103,7 +94,7 @@ def plot_analysis(df):
     # ax.xaxis.set_minor_locator(mdates.SecondLocator(bysecond=np.arange(0, 60, 10)))
 
     ax.grid(True)
-    fig.autofmt_xdat
+    fig.autofmt_xdate()
 
     plt.xlabel('Time (H:M)')
     plt.ylabel('Lifetime (ms)')
@@ -124,7 +115,9 @@ def plot_analysis(df):
 if __name__ == "__main__":
 
     # Folder to analyse
-    timestamp = 1468337701.568398
+    timestamp = 1469206924.941636
 
-    df = files_analysis(timestamp)
+    print("Analysing...")
+    df = folder_analysis(timestamp)
+    print("Done! Now plotting...")
     plot_analysis(df)

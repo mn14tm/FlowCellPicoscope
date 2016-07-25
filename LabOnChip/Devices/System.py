@@ -34,13 +34,9 @@ class System(Picoscope, Arduino):
     def single_sweep(self):
 
         # Make directory to store files
-        directory = "Data/" + str(self.timestamp) + "/raw"
+        directory = "../Data/" + str(self.timestamp) + "/raw"
         if not os.path.exists(directory):
             os.makedirs(directory)
-
-        self.get_arduino_data()
-        time.sleep(3)
-        self.request_arduino_data()
 
         # Collect data
         self.armMeasure()
@@ -73,6 +69,10 @@ class System(Picoscope, Arduino):
         rawData = pd.Series(data)
         storeRaw.put('data/', rawData)
         storeRaw.close()
+
+        self.get_arduino_data()
+        time.sleep(3)
+        self.request_arduino_data()
 
     def sweeps_number(self, sweeps):
         """ Measure and save single sweeps. """

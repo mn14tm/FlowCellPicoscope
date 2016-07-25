@@ -12,15 +12,22 @@ class ITC4001:
     def setup(self):
         # Set TEC setpoint
         self.inst.write('SOUR:TEMP 25C')
-
         # Set LD current setpoint
         self.inst.write('SOUR:CURR 0.5')
         # # Set TEC setpoint
         # self.inst.write('')
 
+    def setup_1618nm(self):
+        # Set TEC setpoint
+        self.inst.write('SOUR:TEMP 25C')
+        # Set LD current setpoint
+        self.inst.write('SOUR:CURR:LIM 0.4')
+        # # Set TEC setpoint
+        # self.inst.write('')
+
     def set_ld_current(self, current):
         # Set LD current limit
-        self.inst.write('SOUR:CURR:LIM {:.2f}'.format(current))
+        self.inst.write('SOUR:CURR {:.2f}'.format(current))
 
     def turn_ld_on(self):
         self.inst.write('OUTP ON')
@@ -40,9 +47,8 @@ class ITC4001:
         # Set trigger source to internal
         self.inst.write('TRIG:SOUR INT')
 
-def save_config(self, loc=1):
-    self.inst.write('*SAV {:s}'.format(loc))
+    def save_config(self, loc=1):
+        self.inst.write('*SAV {:s}'.format(loc))
 
-
-def load_config(self, loc=1):
-    self.inst.write('*RCL {:s}'.format(loc))
+    def load_config(self, loc=1):
+        self.inst.write('*RCL {:s}'.format(loc))
