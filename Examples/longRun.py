@@ -18,7 +18,6 @@ if __name__ == "__main__":
     laserDriver = ITC4001()
     laserDriver.set_ld_current(current)
     laserDriver.turn_ld_on()
-    power = laserDriver.get_optical_power()  # power at the photodiode (W)
 
     # Setup picoscope for logging
     scope = System(chip=chip,

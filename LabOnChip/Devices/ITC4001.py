@@ -9,24 +9,22 @@ class ITC4001:
         self.inst = rm.open_resource('USB0::0x1313::0x804A::M00315699::INSTR')
         # print(self.inst.query("*IDN?"))  # What are you?
 
-    def setup(self):
+    def setup_980nm(self):
+        """ Setup parameters for 980nm laser diode. """
         # Set TEC setpoint
         self.inst.write('SOUR:TEMP 25C')
         # Set LD current setpoint
-        self.inst.write('SOUR:CURR 0.5')
-        # # Set TEC setpoint
-        # self.inst.write('')
+        self.inst.write('SOUR:CURR LIM 0.5')
 
     def setup_1618nm(self):
+        """ Setup parameters for 980nm laser diode. """
         # Set TEC setpoint
         self.inst.write('SOUR:TEMP 25C')
         # Set LD current setpoint
         self.inst.write('SOUR:CURR:LIM 0.4')
-        # # Set TEC setpoint
-        # self.inst.write('')
 
     def set_ld_current(self, current):
-        # Set LD current limit
+        # Set LD current setpoint
         self.inst.write('SOUR:CURR {:.2f}'.format(current))
 
     def turn_ld_on(self):
@@ -39,11 +37,11 @@ class ITC4001:
         # Measures LD power via PD
         return self.inst.query("MEAS:POWer2?")
 
-    def set_qcw(self):
+    def set_qcw(self, period=0.2, width=0.05):
         # Set source period to 200 ms
-        self.inst.write('SOUR:PULS:PER 0.2')
-        # Set source period to 50 ms
-        self.inst.write('SOUR:PULS:PER 0.05')
+        self.inst.write('SOUR:PULS:PER {:.3f}'.format(period))
+        # Set pulse width to 50 ms
+        self.inst.write('SOUR:PULS:WIDT {:.3f}'.format(width))
         # Set trigger source to internal
         self.inst.write('TRIG:SOUR INT')
 
