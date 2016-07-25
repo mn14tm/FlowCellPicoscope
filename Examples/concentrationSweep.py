@@ -3,7 +3,7 @@ import numpy as np
 
 from LabOnChip.Devices.System import System
 from LabOnChip.Devices.SyringePump import SyringePump
-from LabOnChip.HelperFunctions import analysis
+from LabOnChip.HelperFunctions import folder_analysis, plot_analysis
 from LabOnChip.HelperFunctions import dilution
 from datetime import datetime
 
@@ -83,5 +83,7 @@ if __name__ == "__main__":
 
     # Analyse Data
     print("Analysing data files...")
-    analysis(timestamp=timestamp)
-    print("Done!")
+    df = folder_analysis(timestamp)
+    print("Done! Now plotting...")
+    plot_analysis(df, folder=timestamp)
+    print("Finito!")

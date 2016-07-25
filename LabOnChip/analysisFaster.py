@@ -3,6 +3,7 @@ import matplotlib.dates as mdates
 import pandas as pd
 import matplotlib.pyplot as plt
 import glob as gb
+import time
 
 from LabOnChip.HelperFunctions import fit_decay
 from multiprocessing import Pool

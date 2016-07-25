@@ -3,9 +3,8 @@ import matplotlib.dates as mdates
 import pandas as pd
 import matplotlib.pyplot as plt
 import glob as gb
-from tqdm import tqdm
 from scipy.optimize import curve_fit
-
+from multiprocessing import Pool
 
 # Helper Functions
 def mono_exp_decay(t, a, tau, c):
@@ -37,61 +36,74 @@ def dilution(conc_out, conc_stock, vol_out=1):
     return vol_dilute, vol_stock
 
 
-def analysis(timestamp):
-    # Analyse data in the folder named timestamp
+def analysis(file):
+    # Load HDF file
+    store = pd.HDFStore(file)
+    df_file = store['log']
 
-    # Empty data frame to append results to
-    df = pd.DataFrame()
+    # Create time axis in ms
+    fs = store['log']['fs'][0]
+    samples = store['log']['sample_no'][0]
+    x = np.arange(samples) * fs * 1E3
 
-    # for folder in timestamped folder folder:
-    for file in tqdm(gb.glob("../Data/" + str(timestamp) + "/raw/*.h5")):
-        # print("Analysing file:" + file)
+    # Load decay data
+    y = store['data']
 
-        # Load HDF file
-        store = pd.HDFStore(file)
-        df_file = store['log']
+    # Close hdf5 file
+    store.close()
 
-        # Create time axis in ms
-        fs = store['log']['fs'][0]
-        samples = store['log']['sample_no'][0]
-        x = np.arange(samples) * fs * 1E3
+    # Calculate lifetime
+    popt = fit_decay(x, y)
 
-        # Load decay data
-        y = store['data']
+    # Append lifetime to individual measurement dataframe
+    df_file['A'] = popt[0]
+    df_file['tau'] = popt[1]
+    df_file['c'] = popt[2]
 
-        # Calculate lifetime
-        popt = fit_decay(x, y)
+    return df_file
 
-        # Append lifetime to dataframe
-        df_file['A'] = popt[0]
-        df_file['tau'] = popt[1]
-        df_file['c'] = popt[2]
 
-        # Add sweep data to measurement dataframe
-        df = df.append(df_file)
+def folder_analysis(folder):
+    """ Use multiprocessing to analysise raw files inside the timestamp folder"""
 
-        # Close hdf5 file
-        store.close()
+    pool = Pool()
+
+    # Get raw data files list
+    files = gb.glob("../Data/" + str(folder) + "/raw/*.h5")
+
+    # Do fitting
+    results = pool.map(analysis, files)
+
+    # close the pool and wait for the work to finish
+    pool.close()
+    pool.join()
+
+    # merging parts processed by different processes
+    df = pd.concat(results, axis=0)
 
     # Sort rows in measurement dataframe by datetime
     df = df.set_index('datetime').sort_index()
     df = df.reset_index()
 
     # Save dataframe
-    df.to_csv("../Data/" + str(timestamp) + "/analysis.csv")
+    df.to_csv("../Data/" + str(folder) + "/analysis.csv")
 
-    store = pd.HDFStore("../Data/" + str(timestamp) + "/analysis.h5")
+    store = pd.HDFStore("../Data/" + str(folder) + "/analysis.h5")
     store['df'] = df  # save it
     store.close()
 
+    return df
+
+
+def plot_analysis(df, folder):
     # Create plot of lifetime vs time
     fig, ax = plt.subplots()
     ax.plot(df['datetime'], df['tau'], 'o', alpha=0.3)
     # ax.plot(df['datetime'], df['tempC'], '-')
 
     # format the ticks
-    ax.xaxis.set_major_locator(mdates.MinuteLocator())
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+    # ax.xaxis.set_major_locator(mdates.MinuteLocator())
+    # ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
     # ax.xaxis.set_minor_locator(mdates.SecondLocator(bysecond=np.arange(0, 60, 10)))
 
     ax.grid(True)
@@ -101,8 +113,7 @@ def analysis(timestamp):
     plt.ylabel('Lifetime (ms)')
     # plt.tight_layout()
     plt.ticklabel_format(useOffset=False, axis='y')
-
-    plt.savefig("../Data/" + str(timestamp) + '/lifetimeVsTime.png', dpi=500)
+    plt.savefig("../Data/" + str(folder) + '/lifetimeVsTime.png', dpi=500)
 
     # Create histogram plot
     fig2, ax2 = plt.subplots()
@@ -111,13 +122,5 @@ def analysis(timestamp):
     plt.ticklabel_format(useOffset=False)
     plt.xlabel('Lifetime (ms)')
     plt.ylabel('Frequency')
-
-    plt.savefig("../Data/" + str(timestamp) + '/histogram.png', dpi=500)
-
-    # Bring window to the front (above pycharm)
-    fig.canvas.manager.window.activateWindow()
-    fig.canvas.manager.window.raise_()
-    fig2.canvas.manager.window.activateWindow()
-    fig2.canvas.manager.window.raise_()
-
+    plt.savefig("../Data/" + str(folder) + '/histogram.png', dpi=500)
     plt.show()
