@@ -14,9 +14,9 @@ class Picoscope:
     def openScope(self):
         self.ps.open()
 
+        # Set resolution
         bitRes = 16
         self.ps.setResolution(str(bitRes))
-        print("Resolution =  %d Bit" % bitRes)
 
         self.ps.setChannel("A", coupling="DC", VRange=10.0, VOffset=-8.0, enabled=True)
         self.ps.setChannel("B", coupling="DC", VRange=5.0, VOffset=0, enabled=False)
@@ -30,14 +30,14 @@ class Picoscope:
         sampleFreq = 1E4
         sampleInterval = 1.0 / sampleFreq
 
-        res = self.ps.setSamplingInterval(sampleInterval, obsDuration)
-        self.res = res
+        self.res = self.ps.setSamplingInterval(sampleInterval, obsDuration)
 
         # Print final capture settings
-        print("Sampling frequency = %.3f MHz" % (1E-6/res[0]))
-        print("Sampling interval = %.f ns" % (res[0] * 1E9))
-        print("Taking  samples = %d" % res[1])
-        print("Maximum samples = %d" % res[2])
+        print("Resolution =  %d Bit" % bitRes)
+        print("Sampling frequency = %.3f MHz" % (1E-6/self.res[0]))
+        print("Sampling interval = %.f ns" % (self.res[0] * 1E9))
+        print("Taking  samples = %d" % self.res[1])
+        print("Maximum samples = %d" % self.res[2])
 
     def closeScope(self):
         self.ps.close()
@@ -69,13 +69,11 @@ class Picoscope:
         standd = np.std(residuals)
 
         # Do plots
-        fig, (ax1, ax2) = plt.subplots(2,figsize=(15, 15), sharex=False)
+        fig, (ax1, ax2) = plt.subplots(2, figsize=(15, 15), sharex=False)
         # creating a timer object and setting an interval of 3000 milliseconds
         timer = fig.canvas.new_timer(interval=3000)
         timer.add_callback(plt.close)
-
         ax1.set_title("Lifetime is {0:.4f} $\pm$ {1:.4f} ms".format(popt[1], standd))
-
         ax1.plot(x, data, 'k.', label="Original Noised Data")
         ax1.plot(x, mono_exp_decay(x, *popt), 'r-', label="Fitted Curve")
         ax1.axvline(popt[1], color='blue')
@@ -84,16 +82,13 @@ class Picoscope:
         ax1.set_xlim(0, max(x))
         ax1.axhline(y=0, color='k')
         ax1.legend()
-
         ax2.set_xlabel("Time (ms)")
         ax2.set_ylabel('Residuals')
         ax2.axhline(y=0, color='k')
         ax2.plot(x, residuals)
         ax2.set_xlim(0, max(x))
         ax2.grid(True, which="major")
-
         # Bring window to the front (above pycharm)
         fig.canvas.manager.window.activateWindow()
         fig.canvas.manager.window.raise_()
-        timer.start()
         plt.show()

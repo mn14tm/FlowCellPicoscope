@@ -1,6 +1,6 @@
 from LabOnChip.Devices.System import System
 from LabOnChip.Devices.ITC4001 import ITC4001
-from LabOnChip.HelperFunctions import analysis
+from LabOnChip.HelperFunctions import folder_analysis, plot_analysis
 
 from datetime import datetime
 
@@ -9,7 +9,7 @@ if __name__ == "__main__":
     # Measurement Info
     chip = 'T6'
     medium = 'Water'
-    timestamp = datetime.now().timestamp()  # Unique measurement ID
+    measurementID = datetime.now().timestamp()  # Unique measurement ID
 
     # Excitation signal
     current = 0.5  # Laser drive current(A)
@@ -23,7 +23,7 @@ if __name__ == "__main__":
     scope = System(chip=chip,
                    current=current,
                    medium=medium,
-                   timestamp=timestamp)
+                   timestamp=measurementID)
     scope.openScope()
 
     # Capture and fit single sweeps
@@ -41,5 +41,7 @@ if __name__ == "__main__":
 
     # Analyse Data
     print("Analysing data files...")
-    analysis(timestamp=timestamp)
-    print("Done!")
+    df = folder_analysis(measurementID)
+    print("Done! Now plotting...")
+    plot_analysis(df, folder=measurementID)
+    print("Finito!")

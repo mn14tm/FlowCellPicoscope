@@ -2,9 +2,9 @@ import time
 import numpy as np
 
 from LabOnChip.Devices.System import System
+from LabOnChip.Devices.ITC4001 import ITC4001
 from LabOnChip.Devices.SyringePump import SyringePump
-from LabOnChip.HelperFunctions import analysis
-from LabOnChip.HelperFunctions import dilution
+from LabOnChip.HelperFunctions import folder_analysis, plot_analysis, dilution
 from datetime import datetime
 
 
@@ -12,32 +12,30 @@ if __name__ == "__main__":
     # Measurement Info
     chip = 'T6'
     medium = 'Intralipid (%)'
-    timestamp = datetime.now().timestamp()  # Unique measurement ID
+    measurementID = datetime.now().timestamp()  # Unique measurement ID
 
-    # Excitation signal
-    current = 0.5  # Laser drive current(A)
-    power = 0.27  # power at the photodiode (W)
-
-    # Sample
-    conc_stock = 10  # % IL of stock solution
+    # Setup syringe pumps
+    conc_stock = 20  # % IL of stock solution
     flow_rate = 1  # Flow rate over photonic chip (ml/min)
-
     pump = SyringePump()
-
     # Syringe Pump addresses
     water = 1
     intralipid = 2
-
     # Set Syringe Diameter for 60ml syringe
     pump.send_command(water, 'DIA 26.59')
     pump.send_command(intralipid, 'DIA 26.59')
 
+    # Setup laser diode driver
+    current = 0.1  # Laser drive current(A)
+    laserDriver = ITC4001()
+    laserDriver.set_ld_current(current)
+    laserDriver.turn_ld_on()
+
     # Setup picoscope for logging
     scope = System(chip=chip,
-                current=current,
-                power=power,
-                medium=medium,
-                timestamp=timestamp)
+                   current=current,
+                   medium=medium,
+                   timestamp=measurementID)
     scope.openScope()
 
     # Show a single sweep with the fit
@@ -79,9 +77,12 @@ if __name__ == "__main__":
 
     # Stop and close all instruments
     scope.closeScope()
+    laserDriver.turn_ld_off()
     print('Done')
 
     # Analyse Data
     print("Analysing data files...")
-    analysis(timestamp=timestamp)
-    print("Done!")
+    df = folder_analysis(measurementID)
+    print("Done! Now plotting...")
+    plot_analysis(df, folder=measurementID)
+    print("Finito!")

@@ -17,10 +17,10 @@ class System(Picoscope, Arduino):
         super(System, self).__init__(*args, **kwargs)
 
         # Measurement Data
+        self.measurementID = kwargs['measurementID']
         self.chip = kwargs['chip']
         self.current = kwargs['current']
         self.medium = kwargs['medium']
-        self.timestamp = kwargs['timestamp']
         self.concentration = np.nan
 
     def set_concentration(self, concentration):
@@ -32,9 +32,8 @@ class System(Picoscope, Arduino):
         self.power = power
 
     def single_sweep(self):
-
         # Make directory to store files
-        directory = "../Data/" + str(self.timestamp) + "/raw"
+        directory = "../Data/" + str(self.measurementID) + "/raw"
         if not os.path.exists(directory):
             os.makedirs(directory)
 
@@ -43,13 +42,10 @@ class System(Picoscope, Arduino):
         dt = datetime.now()
         data = self.measure()
 
-        #####
-        # start_time = timeit.default_timer()
-        #####
         fname = directory + "/" + str(datetime.now().timestamp()) + ".h5"
         storeRaw = pd.HDFStore(fname)
 
-        rawLog = {"measurementID": self.timestamp,
+        rawLog = {"measurementID": self.measurementID,
                   "chip": self.chip,
                   "current": self.current,
                   "power": self.power,
@@ -75,16 +71,15 @@ class System(Picoscope, Arduino):
         self.request_arduino_data()
 
     def sweeps_number(self, sweeps):
-        """ Measure and save single sweeps. """
+        """ Measure and save single sweeps for a given number of sweeps. """
 
         # Make directory to store files
-        directory = "Data/" + str(self.timestamp) + "/raw"
+        directory = "Data/" + str(self.measurementID) + "/raw"
         if not os.path.exists(directory):
             os.makedirs(directory)
 
         # Collect and save data for each sweep
         start = time.time()
-        # elapsed = []
         for i in tqdm(range(sweeps)):
 
             if time.time() - start > 3:
@@ -97,13 +92,10 @@ class System(Picoscope, Arduino):
             dt = datetime.now()
             data = self.measure()
 
-            #####
-            # start_time = timeit.default_timer()
-            #####
             fname = directory + "/" + str(datetime.now().timestamp()) + ".h5"
             storeRaw = pd.HDFStore(fname)
 
-            rawLog = {"measurementID": self.timestamp,
+            rawLog = {"measurementID": self.measurementID,
                       "chip": self.chip,
                       "current": self.current,
                       "power": self.power,
@@ -125,12 +117,6 @@ class System(Picoscope, Arduino):
             rawData = pd.Series(data)
             storeRaw.put('data/', rawData)
             storeRaw.close()
-            ######
-            # elapsed.append(timeit.default_timer() - start_time)
-        # mean = np.mean(np.asarray(elapsed))
-        # std = np.std(np.asarray(elapsed))
-        # print(mean, std)
-        #####
         try:
             winsound.Beep(600, 1000)
         except:
@@ -140,14 +126,11 @@ class System(Picoscope, Arduino):
         """ Measure and save single sweeps over a given run_time. """
 
         # Make directory to store files
-        directory = "../Data/" + str(self.timestamp) + "/raw"
+        directory = "../Data/" + str(self.measurementID) + "/raw"
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-        # Collect and save data for each sweep
-        # self.request_arduino_data()
-        sweep = 0
-
+        sweep = 0  # Initialise sweep number
         timeout = time.time() + 60*mins  # mins minutes from now
         print("Finished at: {end}".format(end=time.asctime(time.localtime(timeout))))
         start = time.time()
@@ -170,7 +153,7 @@ class System(Picoscope, Arduino):
             fname = directory + "/" + str(datetime.now().timestamp()) + ".h5"
             storeRaw = pd.HDFStore(fname)
 
-            rawLog = {"measurementID": self.timestamp,
+            rawLog = {"measurementID": self.measurementID,
                       "chip": self.chip,
                       "current": self.current,
                       "power": self.power,
