@@ -1,10 +1,15 @@
+import time
+import os
 import numpy as np
 import matplotlib.dates as mdates
+from tqdm import tqdm
 import pandas as pd
 import matplotlib.pyplot as plt
 import glob as gb
 from scipy.optimize import curve_fit
 from multiprocessing import Pool
+from datetime import datetime
+
 
 # Helper Functions
 def mono_exp_decay(t, a, tau, c):
@@ -124,3 +129,75 @@ def plot_analysis(df, folder):
     plt.ylabel('Frequency')
     plt.savefig("../Data/" + str(folder) + '/histogram.png', dpi=500)
     plt.show()
+
+
+def sweeps_number(sweeps, log, arduino, scope, laserDriver):
+    """ Measure and save single sweeps for a given number of sweeps. """
+
+    # Make directory to store files
+    directory = "Data/" + str(log['measurementID']) + "/raw"
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    # Collect and save data for each sweep
+    start = time.time()
+    for i in tqdm(range(sweeps)):
+
+        if time.time() - start > 3:
+            arduino.get_data()
+            arduino.request_data()
+            start = time.time()
+
+        # Collect data from picoscope (detector)
+        scope.armMeasure()
+        log['datetime'] = datetime.now()
+        data = scope.measure()
+
+        fname = directory + "/" + str(log['datetime']) + ".h5"
+        storeRaw = pd.HDFStore(fname)
+        storeRaw.put('log/', pd.DataFrame(log, index=[0]))
+
+        rawData = pd.Series(data)
+        storeRaw.put('data/', rawData)
+        storeRaw.close()
+
+
+def sweeps_time(mins, log, arduino, scope, laserDriver):
+    """ Measure and save single sweeps over a given run_time. """
+
+    # Make directory to store files
+    directory = "../Data/" + str(log['measurementID']) + "/raw"
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    sweep = 0  # Initialise sweep number
+    timeout = time.time() + 60 * mins  # mins minutes from now
+    print("Finished at: {end}".format(end=time.asctime(time.localtime(timeout))))
+    start = time.time()
+    while time.time() > timeout:
+        # TODO: check this works above and lower if can be removed
+        # if time.time() > timeout:
+        #     break
+        sweep += 1
+
+        # Arduino Update every 3 seconds
+        if time.time() - start > 3:
+            arduino.get_data()
+            arduino.request_data()
+            start = time.time()
+
+        # Update laser measured optical power (by photodiode internal)
+        log['optical power'] = laserDriver.get_optical_power()
+
+        # Collect data from picoscope (detector)
+        scope.armMeasure()
+        log['datetime'] = datetime.now()
+        data = scope.measure()
+
+        fname = directory + "/" + str(log['datetime']) + ".h5"
+        storeRaw = pd.HDFStore(fname)
+        storeRaw.put('log/', pd.DataFrame(log, index=[0]))
+
+        rawData = pd.Series(data)
+        storeRaw.put('data/', rawData)
+        storeRaw.close()

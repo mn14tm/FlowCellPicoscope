@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import time
 import os
 import winsound
@@ -14,6 +13,8 @@ from LabOnChip.Devices.Arduino import Arduino
 class System(Picoscope, Arduino):
     def __init__(self, *args, **kwargs):
         # Initialise super classes
+        # TODO: can use in future instead of explicitly calling measurement data kwargs?
+        # self.myvalue = kwargs.pop('myvalue', None)
         super(System, self).__init__(*args, **kwargs)
 
         # Measurement Data
