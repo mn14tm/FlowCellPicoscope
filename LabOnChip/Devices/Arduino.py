@@ -23,16 +23,16 @@ class Arduino:
         time.sleep(3)
 
         # Initialise variables
-        self.request_arduino_data()
+        self.request_data()
         time.sleep(3)
-        self.get_arduino_data()
-        self.request_arduino_data()
+        self.get_data()
+        self.request_data()
 
-    def request_arduino_data(self):
+    def request_data(self):
         # Serial request temperature, humidity and thermocouple data (ArduinoV3)
         self.ser.write(b'UPDATE\n')
 
-    def get_arduino_data(self):
+    def get_data(self):
         buffer_string = ''
         buffer_string += self.ser.read(self.ser.inWaiting()).decode('utf-8')
         if '\n' in buffer_string:

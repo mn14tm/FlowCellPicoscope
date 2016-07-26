@@ -18,12 +18,12 @@ class Picoscope:
         bitRes = 16
         self.ps.setResolution(str(bitRes))
 
-        self.ps.setChannel("A", coupling="DC", VRange=10.0, VOffset=-8.0, enabled=True)
+        self.ps.setChannel("A", coupling="DC", VRange=20.0, VOffset=-15.0, enabled=True)
         self.ps.setChannel("B", coupling="DC", VRange=5.0, VOffset=0, enabled=False)
-        self.ps.setSimpleTrigger(trigSrc="External", threshold_V=2.0, direction="Falling", timeout_ms=5000)
+        self.ps.setSimpleTrigger(trigSrc="External", threshold_V=2.0, direction="Rising", timeout_ms=5000)
 
         # Set capture duration, s
-        waveformDuration = 100E-3
+        waveformDuration = 50E-3
         obsDuration = 1*waveformDuration
 
         # Set sampling rate, Hz
@@ -53,6 +53,33 @@ class Picoscope:
         return self.ps.getDataV("A")
 
     def show_signal(self):
+        """ Show the signal with the current picoscope settings """
+
+        # Create a time axis for the plots
+        x = np.arange(self.res[1]) * self.res[0]
+        x *= 1E3  # Convert to milliseconds
+
+        # Collect data
+        self.armMeasure()
+        data = self.measure()
+
+        # Do plots
+        fig, ax = plt.subplots(figsize=(15, 15))
+        # creating a timer object and setting an interval of 3000 milliseconds
+        timer = fig.canvas.new_timer(interval=3000)
+        timer.add_callback(plt.close)
+        ax.plot(x, data, 'k.')
+        ax.grid(True, which="major")
+        ax.set_ylabel('Intensity (A.U.)')
+        ax.set_xlim(0, max(x)*1.1)
+        ax.axhline(y=0, color='k')
+        ax.set_xlabel("Time (ms)")
+        # Bring window to the front (above pycharm)
+        fig.canvas.manager.window.activateWindow()
+        fig.canvas.manager.window.raise_()
+        plt.show()
+
+    def show_decay(self):
         """ Measure a single decay and show with the fit in a plot. """
 
         # Create a time axis for the plots
@@ -92,3 +119,9 @@ class Picoscope:
         fig.canvas.manager.window.activateWindow()
         fig.canvas.manager.window.raise_()
         plt.show()
+
+
+if __name__ == "__main__":
+    scope = Picoscope()
+    scope.openScope()
+    scope.show_signal()
