@@ -142,14 +142,13 @@ def sweeps_number(sweeps, log, arduino, scope, laserDriver):
     log['sweeps'] = sweeps
 
     # Make directory to store files
-    directory = "Data/" + str(log['measurementID']) + "/raw"
+    directory = "../Data/" + str(log['measurementID']) + "/raw"
     if not os.path.exists(directory):
         os.makedirs(directory)
 
     # Collect and save data for each sweep
     start = time.time()
     for i in tqdm(range(sweeps)):
-
         log['sweep_no'] = i + 1
 
         if time.time() - start > 3:
@@ -160,16 +159,15 @@ def sweeps_number(sweeps, log, arduino, scope, laserDriver):
             log['humidity'] = arduino.humidity
             arduino.request_data()
             start = time.time()
-
-        # Update laser measured optical power (by photodiode internal)
-        log['optical power'] = laserDriver.get_optical_power()
+            # Update laser measured optical power (by photodiode internal)
+            log['optical power'] = laserDriver.get_optical_power()
 
         # Collect data from picoscope (detector)
         scope.armMeasure()
         log['datetime'] = datetime.now()
         data = scope.measure()
 
-        fname = directory + "/" + str(log['datetime']) + ".h5"
+        fname = directory + "/" + str(log['datetime'].timestamp()) + ".h5"
         storeRaw = pd.HDFStore(fname)
         storeRaw.put('log/', pd.DataFrame(log, index=[0]))
 
@@ -194,7 +192,7 @@ def sweeps_time(mins, log, arduino, scope, laserDriver):
         sweep += 1
         log['sweep_no'] = sweep
 
-        # Arduino Update every 3 seconds
+        # Arduino and laser power Update every 3 seconds
         if time.time() - start > 3:
             arduino.get_data()
             log['t_in'] = arduino.t_in
@@ -203,16 +201,15 @@ def sweeps_time(mins, log, arduino, scope, laserDriver):
             log['humidity'] = arduino.humidity
             arduino.request_data()
             start = time.time()
-
-        # Update laser measured optical power (by photodiode internal)
-        log['optical power'] = laserDriver.get_optical_power()
+            # Update laser measured optical power (by photodiode internal)
+            log['optical power'] = laserDriver.get_optical_power()
 
         # Collect data from picoscope (detector)
         scope.armMeasure()
-        log['datetime'] = datetime.now().timestamp()
+        log['datetime'] = datetime.now()
         data = scope.measure()
 
-        fname = directory + "/" + str(log['datetime']) + ".h5"
+        fname = directory + "/" + str(log['datetime'].timestamp()) + ".h5"
         storeRaw = pd.HDFStore(fname)
         storeRaw.put('log/', pd.DataFrame(log, index=[0]))
 

@@ -1,68 +1,73 @@
 import time
 import numpy as np
 
-from LabOnChip.Devices.System import System
+from LabOnChip.Devices.ITC4001 import ITC4001
 from LabOnChip.Devices.SyringePump import SyringePump
-from LabOnChip.HelperFunctions import analysis
-from LabOnChip.HelperFunctions import dilution
+from LabOnChip.Devices.Picoscope import Picoscope
+from LabOnChip.Devices.Arduino import Arduino
+from LabOnChip.HelperFunctions import folder_analysis, plot_analysis, dilution, sweeps_time, sweeps_number
 from datetime import datetime
+from twilio.rest import TwilioRestClient
 
 
 if __name__ == "__main__":
-    # Measurement Info
-    chip = 'T6'
-    medium = 'il 10%'
-    timestamp = datetime.now().timestamp()  # Unique measurement ID
+    # Measurement Info Dictionary
+    log = dict(measurementID=datetime.now().timestamp(),
+               chip='Blank',
+               medium='Water (waterbath at 30deg)'
+               )
 
-    # Excitation signal
-    current = 0.5  # Laser drive current(A)
-    power = 0.27  # power at the photodiode (W)
-
-    # Sample
-    flow_rate = 1  # Flow rate over photonic chip (ml/min)
-
-    pump = SyringePump()
-    # Syringe Pump addresses
-    water = 1
-
-    # Set Syringe Diameter for 60ml syringe
-    pump.send_command(water, 'DIA 26.59')
+    # Setup laser diode driver
+    log["current"] = 0.07  # Laser drive current(A)
+    laserDriver = ITC4001()
+    laserDriver.set_ld_current(log["current"])
+    laserDriver.turn_ld_on()
 
     # Setup picoscope for logging
-    scope = System(chip=chip,
-                current=current,
-                power=power,
-                medium=medium,
-                timestamp=timestamp)
+    scope = Picoscope()
     scope.openScope()
+    scope.show_signal()  # Show a single sweep with the fit
+    log['fs'] = scope.res[0]
+    log['sample_no'] = scope.res[1]
 
-    # Show a single sweep with the fit
-    scope.show_signal()
+    # Setup syringe pumps
+    flow_rate = 1       # Flow rate over photonic chip (ml/min)
+    log['flow_rate'] = flow_rate
+    water = 1           # Syringe Pump address
+    pump = SyringePump()
+    pump.send_command(water, 'DIA 26.59')  # Set Syringe Diameter for 60ml syringe
 
-    # Flush 2 ml/min for 1 min
-    # pump.send_command(water, 'RAT 2 MM')
-    # pump.send_command(water, 'RUN')
-    # time.sleep(60)
-    # pump.send_command(water, 'STP')
+    # Setup Arduino
+    arduino = Arduino()
+    log['t_in'] = arduino.t_in
+    log['t_out'] = arduino.t_out
+    log['tempC'] = arduino.tempC
+    log['humidity'] = arduino.humidity
 
     # Clear dispensed volume
     pump.send_command(water, 'CLD INF')
 
-    # Send to pumps
-    pump.send_command(water, 'RAT 1 MM')
+    # Update concentration to save to data files
+    log['concentration'] = 0
+
+    # Send rates to pumps
+    pump.send_command(water, 'RAT {:.2f} MM'.format(flow_rate))
     pump.send_command(water, 'RUN')
 
     # Capture and fit single sweeps
-    # scope.sweeps_number(sweeps=50)
-    scope.sweeps_time(mins=5)
+    # sweeps_number(sweeps=10, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
+    sweeps_time(mins=55, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
 
     pump.send_command(water, 'STP')
 
     # Stop and close all instruments
     scope.closeScope()
-    print('Done')
+    laserDriver.turn_ld_off()
+    print('Finished measurements.')
 
     # Analyse Data
     print("Analysing data files...")
-    analysis(timestamp=timestamp)
-    print("Done!")
+    df = folder_analysis(log['measurementID'])
+    print("Done! Now plotting...")
+    # plot_analysis(df, folder=log['measurementID'])
+    print("Finito!")

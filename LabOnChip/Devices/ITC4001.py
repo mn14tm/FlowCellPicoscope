@@ -35,7 +35,7 @@ class ITC4001:
 
     def get_optical_power(self):
         # Measures LD power via PD
-        return self.inst.query("MEAS:POWer2?")
+        return float(self.inst.query("MEAS:POWer2?"))
 
     def set_qcw(self, period=0.2, width=0.05):
         # Set source period to 200 ms

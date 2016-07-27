@@ -5,22 +5,31 @@ from LabOnChip.Devices.ITC4001 import ITC4001
 from LabOnChip.Devices.SyringePump import SyringePump
 from LabOnChip.Devices.Picoscope import Picoscope
 from LabOnChip.Devices.Arduino import Arduino
-from LabOnChip.HelperFunctions import folder_analysis, plot_analysis, dilution, sweeps_time
+from LabOnChip.HelperFunctions import folder_analysis, plot_analysis, dilution, sweeps_time, sweeps_number
 from datetime import datetime
+from twilio.rest import TwilioRestClient
 
 
 if __name__ == "__main__":
     # Measurement Info Dictionary
     log = dict(measurementID=datetime.now().timestamp(),
-               chip='T6',
+               chip='Blank',
                medium='Intralipid (%)'
                )
+
+    # Setup texting when complete
+    accountSID = 'AC8e87f7e3dfec4552532dcae2480fa021'
+    authToken = 'a576d5aac28efc503b50b5958e9276f0'
+    twilioCli = TwilioRestClient(accountSID, authToken)
+    myTwilioNumber = '+441725762055'
+    myCellPhone = '+447932553111'
 
     # Setup laser diode driver
     log["current"] = 0.07  # Laser drive current(A)
     laserDriver = ITC4001()
     laserDriver.set_ld_current(log["current"])
     laserDriver.turn_ld_on()
+    log['optical power'] = laserDriver.get_optical_power()
 
     # Setup picoscope for logging
     scope = Picoscope()
@@ -28,13 +37,6 @@ if __name__ == "__main__":
     scope.show_signal()  # Show a single sweep with the fit
     log['fs'] = scope.res[0]
     log['sample_no'] = scope.res[1]
-
-    # Setup Arduino
-    arduino = Arduino()
-    log['t_in'] = arduino.t_in
-    log['t_out'] = arduino.t_out
-    log['tempC'] = arduino.tempC
-    log['humidity'] = arduino.humidity
 
     # Setup syringe pumps
     conc_stock = 20     # % IL of stock solution
@@ -48,11 +50,20 @@ if __name__ == "__main__":
 
     # Flush 2 ml/min for 1 min
     print("Flushing...")
-    pump.send_command(water, 'RAT 2 MM')
+    pump.send_command(water, 'RAT 1 MM')
     pump.send_command(water, 'RUN')
-    time.sleep(6)
-    pump.send_command(water, 'STP')
+    time.sleep(60)
+    # pump.send_command(water, 'STP')
     print("Flush finished!")
+
+    # Setup Arduino
+    arduino = Arduino()
+    log['t_in'] = arduino.t_in
+    log['t_out'] = arduino.t_out
+    log['tempC'] = arduino.tempC
+    log['humidity'] = arduino.humidity
+
+    pump.send_command(water, 'STP')
 
     # Clear dispensed volume
     pump.send_command(water, 'CLD INF')
@@ -75,8 +86,8 @@ if __name__ == "__main__":
         pump.send_command(intralipid, 'RUN')
 
         # Capture and fit single sweeps
-        # scope.sweeps_number(sweeps=50, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
-        sweeps_time(mins=1/10, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
+        # sweeps_number(sweeps=10, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
+        sweeps_time(mins=5, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
 
         pump.send_command(water, 'STP')
         pump.send_command(intralipid, 'STP')
@@ -92,3 +103,9 @@ if __name__ == "__main__":
     print("Done! Now plotting...")
     # plot_analysis(df, folder=log['measurementID'])
     print("Finito!")
+
+    message = twilioCli.messages.create(
+        body='Experiment Finished',
+        from_=myTwilioNumber,
+        to=myCellPhone
+    )

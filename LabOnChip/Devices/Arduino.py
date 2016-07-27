@@ -39,7 +39,11 @@ class Arduino:
             last_received = buffer_string[:-2]  # Remove \n and \r
             # print(last_received)
             # Extract data from string
-            [self.tempC, self.humidity, self.t_in, self.t_out] = re.findall(r"\d+\.\d+", last_received)
+            result = re.findall(r"\d+\.\d+", last_received)
+            # Convert to floats
+            result = map(float, result)
+            # Store results
+            [self.tempC, self.humidity, self.t_in, self.t_out] = result
             # print(self.tempC, self.humidity, self.t_in, self.t_out)
 
     def log_arduino(self):
@@ -54,3 +58,6 @@ class Arduino:
                 [self.tempC, self.humidity, self.t_in, self.t_out] = re.findall(r"\d+\.\d+", last_received)
                 buffer_string = ''  # Reset buffer string
                 print(self.tempC, self.humidity, self.t_in, self.t_out)
+
+if __name__ == "__main__":
+    arduino = Arduino()
