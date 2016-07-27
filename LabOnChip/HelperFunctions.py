@@ -57,24 +57,27 @@ def analysis(file):
     # Close hdf5 file
     store.close()
 
-    # Calculate lifetime
-    popt = fit_decay(x, y)
+    # # Calculate lifetime
+    # popt = fit_decay(x, y)
+    #
+    # # Append lifetime to individual measurement dataframe
+    # df_file['A'] = popt[0]
+    # df_file['tau'] = popt[1]
+    # df_file['c'] = popt[2]
 
-    # Append lifetime to individual measurement dataframe
-    df_file['A'] = popt[0]
-    df_file['tau'] = popt[1]
-    df_file['c'] = popt[2]
-
+    # Reflection mean and std calculation
+    df_file['mean'] = np.mean(y)
+    df_file['std'] = np.std(y)
     return df_file
 
 
 def folder_analysis(folder):
     """ Use multiprocessing to analysise raw files inside the timestamp folder"""
-
     pool = Pool()
 
     # Get raw data files list
-    files = gb.glob("../Data/" + str(folder) + "/raw/*.h5")
+    directory = "../Data/" + str(folder)
+    files = gb.glob( directory + "/raw/*.h5")
 
     # Do fitting
     results = pool.map(analysis, files)
@@ -91,9 +94,9 @@ def folder_analysis(folder):
     df = df.reset_index()
 
     # Save dataframe
-    df.to_csv("../Data/" + str(folder) + "/analysis.csv")
+    df.to_csv(directory + "/analysis.csv")
 
-    store = pd.HDFStore("../Data/" + str(folder) + "/analysis.h5")
+    store = pd.HDFStore(directory + "/analysis.h5")
     store['df'] = df  # save it
     store.close()
 
@@ -101,6 +104,9 @@ def folder_analysis(folder):
 
 
 def plot_analysis(df, folder):
+    # Directory to save plots to
+    directory = "../Data/" + str(folder)
+
     # Create plot of lifetime vs time
     fig, ax = plt.subplots()
     ax.plot(df['datetime'], df['tau'], 'o', alpha=0.3)
@@ -118,7 +124,7 @@ def plot_analysis(df, folder):
     plt.ylabel('Lifetime (ms)')
     # plt.tight_layout()
     plt.ticklabel_format(useOffset=False, axis='y')
-    plt.savefig("../Data/" + str(folder) + '/lifetimeVsTime.png', dpi=500)
+    # plt.savefig(directory + '/lifetimeVsTime.png', dpi=500)
 
     # Create histogram plot
     fig2, ax2 = plt.subplots()
@@ -127,12 +133,13 @@ def plot_analysis(df, folder):
     plt.ticklabel_format(useOffset=False)
     plt.xlabel('Lifetime (ms)')
     plt.ylabel('Frequency')
-    plt.savefig("../Data/" + str(folder) + '/histogram.png', dpi=500)
+    # plt.savefig(directory + '/histogram.png', dpi=500)
     plt.show()
 
 
 def sweeps_number(sweeps, log, arduino, scope, laserDriver):
     """ Measure and save single sweeps for a given number of sweeps. """
+    log['sweeps'] = sweeps
 
     # Make directory to store files
     directory = "Data/" + str(log['measurementID']) + "/raw"
@@ -143,10 +150,19 @@ def sweeps_number(sweeps, log, arduino, scope, laserDriver):
     start = time.time()
     for i in tqdm(range(sweeps)):
 
+        log['sweep_no'] = i + 1
+
         if time.time() - start > 3:
             arduino.get_data()
+            log['t_in'] = arduino.t_in
+            log['t_out'] = arduino.t_out
+            log['tempC'] = arduino.tempC
+            log['humidity'] = arduino.humidity
             arduino.request_data()
             start = time.time()
+
+        # Update laser measured optical power (by photodiode internal)
+        log['optical power'] = laserDriver.get_optical_power()
 
         # Collect data from picoscope (detector)
         scope.armMeasure()
@@ -164,7 +180,7 @@ def sweeps_number(sweeps, log, arduino, scope, laserDriver):
 
 def sweeps_time(mins, log, arduino, scope, laserDriver):
     """ Measure and save single sweeps over a given run_time. """
-
+    log['run_time'] = mins
     # Make directory to store files
     directory = "../Data/" + str(log['measurementID']) + "/raw"
     if not os.path.exists(directory):
@@ -174,15 +190,17 @@ def sweeps_time(mins, log, arduino, scope, laserDriver):
     timeout = time.time() + 60 * mins  # mins minutes from now
     print("Finished at: {end}".format(end=time.asctime(time.localtime(timeout))))
     start = time.time()
-    while time.time() > timeout:
-        # TODO: check this works above and lower if can be removed
-        # if time.time() > timeout:
-        #     break
+    while time.time() < timeout:
         sweep += 1
+        log['sweep_no'] = sweep
 
         # Arduino Update every 3 seconds
         if time.time() - start > 3:
             arduino.get_data()
+            log['t_in'] = arduino.t_in
+            log['t_out'] = arduino.t_out
+            log['tempC'] = arduino.tempC
+            log['humidity'] = arduino.humidity
             arduino.request_data()
             start = time.time()
 
@@ -191,7 +209,7 @@ def sweeps_time(mins, log, arduino, scope, laserDriver):
 
         # Collect data from picoscope (detector)
         scope.armMeasure()
-        log['datetime'] = datetime.now()
+        log['datetime'] = datetime.now().timestamp()
         data = scope.measure()
 
         fname = directory + "/" + str(log['datetime']) + ".h5"
