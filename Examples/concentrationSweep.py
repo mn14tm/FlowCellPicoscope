@@ -39,7 +39,7 @@ if __name__ == "__main__":
     log['sample_no'] = scope.res[1]
 
     # Setup syringe pumps
-    conc_stock = 20     # % IL of stock solution
+    conc_stock = 10     # % IL of stock solution
     flow_rate = 1       # Flow rate over photonic chip (ml/min)
     log['flow_rate'] = flow_rate
     water = 1           # Syringe Pump address
@@ -63,14 +63,37 @@ if __name__ == "__main__":
     log['tempC'] = arduino.tempC
     log['humidity'] = arduino.humidity
 
-    pump.send_command(water, 'STP')
-
     # Clear dispensed volume
+    pump.send_command(water, 'STP')
     pump.send_command(water, 'CLD INF')
     pump.send_command(intralipid, 'CLD INF')
+    pump.send_command(water, 'RUN')
 
     # Set Flow Rate to desired dilution (ml/min)
-    for conc_out in np.linspace(start=0, stop=conc_stock, endpoint=True, num=21):
+    for conc_out in np.linspace(start=0, stop=conc_stock, endpoint=True, num=11):
+        # Update concentration to save to data files
+        log['concentration'] = conc_out
+
+        # Calculate ratio of stock and dilute flow rates
+        [vol_dilute, vol_stock] = dilution(conc_out, conc_stock, vol_out=flow_rate)
+        print('Concentration is {conc:.2f}, flow rate of water {dilute:.2f} and IL {intra:.2f} ml/min'
+              .format(conc=conc_out, dilute=vol_dilute, intra=vol_stock))
+
+        # Send rates to pumps
+        pump.send_command(water, 'RAT {:.2f} MM'.format(vol_dilute))
+        pump.send_command(intralipid, 'RAT {:.2f} MM'.format(vol_stock))
+        pump.send_command(water, 'RUN')
+        pump.send_command(intralipid, 'RUN')
+
+        # Capture and fit single sweeps
+        # sweeps_number(sweeps=10, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
+        sweeps_time(mins=5, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
+
+        pump.send_command(water, 'STP')
+        pump.send_command(intralipid, 'STP')
+
+    # Set Flow Rate to desired dilution (ml/min)
+    for conc_out in np.linspace(start=conc_stock, stop=0, endpoint=True, num=11):
         # Update concentration to save to data files
         log['concentration'] = conc_out
 

@@ -202,7 +202,7 @@ def sweeps_time(mins, log, arduino, scope, laserDriver):
             arduino.request_data()
             start = time.time()
             # Update laser measured optical power (by photodiode internal)
-            log['optical power'] = laserDriver.get_optical_power()
+            log['optical power'] = 0 # laserDriver.get_optical_power()
 
         # Collect data from picoscope (detector)
         scope.armMeasure()

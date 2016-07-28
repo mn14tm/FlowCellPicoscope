@@ -1,6 +1,3 @@
-import time
-import numpy as np
-
 from LabOnChip.Devices.ITC4001 import ITC4001
 from LabOnChip.Devices.SyringePump import SyringePump
 from LabOnChip.Devices.Picoscope import Picoscope
@@ -14,7 +11,7 @@ if __name__ == "__main__":
     # Measurement Info Dictionary
     log = dict(measurementID=datetime.now().timestamp(),
                chip='Blank',
-               medium='Water (waterbath at 30deg)'
+               medium='Water (waterbath at 40deg)'
                )
 
     # Setup laser diode driver
@@ -22,6 +19,7 @@ if __name__ == "__main__":
     laserDriver = ITC4001()
     laserDriver.set_ld_current(log["current"])
     laserDriver.turn_ld_on()
+    log['optical power'] = 0
 
     # Setup picoscope for logging
     scope = Picoscope()
@@ -56,7 +54,7 @@ if __name__ == "__main__":
 
     # Capture and fit single sweeps
     # sweeps_number(sweeps=10, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
-    sweeps_time(mins=55, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
+    sweeps_time(mins=10, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
 
     pump.send_command(water, 'STP')
 
