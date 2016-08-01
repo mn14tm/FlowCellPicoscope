@@ -38,8 +38,15 @@ if __name__ == "__main__":
     log['fs'] = scope.res[0]
     log['sample_no'] = scope.res[1]
 
+    # Setup Arduino
+    arduino = Arduino()
+    log['t_in'] = arduino.t_in
+    log['t_out'] = arduino.t_out
+    log['tempC'] = arduino.tempC
+    log['humidity'] = arduino.humidity
+
     # Setup syringe pumps
-    conc_stock = 10     # % IL of stock solution
+    conc_stock = 20     # % IL of stock solution
     flow_rate = 1       # Flow rate over photonic chip (ml/min)
     log['flow_rate'] = flow_rate
     water = 1           # Syringe Pump address
@@ -48,52 +55,20 @@ if __name__ == "__main__":
     pump.send_command(water, 'DIA 26.59')  # Set Syringe Diameter for 60ml syringe
     pump.send_command(intralipid, 'DIA 26.59')
 
+    # Clear dispensed volume
+    pump.send_command(water, 'CLD INF')
+    pump.send_command(intralipid, 'CLD INF')
+
     # Flush 2 ml/min for 1 min
     print("Flushing...")
-    pump.send_command(water, 'RAT 1 MM')
-    pump.send_command(water, 'RUN')
+    pump.send_command(intralipid, 'RAT 1 MM')
+    pump.send_command(intralipid, 'RUN')
     time.sleep(60)
     # pump.send_command(water, 'STP')
     print("Flush finished!")
 
-    # Setup Arduino
-    arduino = Arduino()
-    log['t_in'] = arduino.t_in
-    log['t_out'] = arduino.t_out
-    log['tempC'] = arduino.tempC
-    log['humidity'] = arduino.humidity
-
-    # Clear dispensed volume
-    pump.send_command(water, 'STP')
-    pump.send_command(water, 'CLD INF')
-    pump.send_command(intralipid, 'CLD INF')
-    pump.send_command(water, 'RUN')
-
     # Set Flow Rate to desired dilution (ml/min)
-    for conc_out in np.linspace(start=0, stop=conc_stock, endpoint=True, num=11):
-        # Update concentration to save to data files
-        log['concentration'] = conc_out
-
-        # Calculate ratio of stock and dilute flow rates
-        [vol_dilute, vol_stock] = dilution(conc_out, conc_stock, vol_out=flow_rate)
-        print('Concentration is {conc:.2f}, flow rate of water {dilute:.2f} and IL {intra:.2f} ml/min'
-              .format(conc=conc_out, dilute=vol_dilute, intra=vol_stock))
-
-        # Send rates to pumps
-        pump.send_command(water, 'RAT {:.2f} MM'.format(vol_dilute))
-        pump.send_command(intralipid, 'RAT {:.2f} MM'.format(vol_stock))
-        pump.send_command(water, 'RUN')
-        pump.send_command(intralipid, 'RUN')
-
-        # Capture and fit single sweeps
-        # sweeps_number(sweeps=10, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
-        sweeps_time(mins=5, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
-
-        pump.send_command(water, 'STP')
-        pump.send_command(intralipid, 'STP')
-
-    # Set Flow Rate to desired dilution (ml/min)
-    for conc_out in np.linspace(start=conc_stock, stop=0, endpoint=True, num=11):
+    for conc_out in np.linspace(start=conc_stock, stop=0, endpoint=True, num=21):
         # Update concentration to save to data files
         log['concentration'] = conc_out
 
@@ -120,6 +95,20 @@ if __name__ == "__main__":
     laserDriver.turn_ld_off()
     print('Finished measurements.')
 
+    # Flush 2 ml/min for 1 min
+    print("Flushing with water...")
+    pump.send_command(water, 'RAT 1 MM')
+    pump.send_command(water, 'RUN')
+    time.sleep(60)
+    pump.send_command(water, 'STP')
+    print("End flush finished!")
+
+    message = twilioCli.messages.create(
+        body='Experiment Finished',
+        from_=myTwilioNumber,
+        to=myCellPhone
+    )
+
     # Analyse Data
     print("Analysing data files...")
     df = folder_analysis(log['measurementID'])
@@ -127,8 +116,4 @@ if __name__ == "__main__":
     # plot_analysis(df, folder=log['measurementID'])
     print("Finito!")
 
-    message = twilioCli.messages.create(
-        body='Experiment Finished',
-        from_=myTwilioNumber,
-        to=myCellPhone
-    )
+
