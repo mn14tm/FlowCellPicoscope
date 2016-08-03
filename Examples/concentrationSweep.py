@@ -60,11 +60,11 @@ if __name__ == "__main__":
     pump.send_command(intralipid, 'CLD INF')
 
     # Flush 2 ml/min for 1 min
-    print("Flushing...")
+    print("Flushing intralipid...")
     pump.send_command(intralipid, 'RAT 1 MM')
     pump.send_command(intralipid, 'RUN')
     time.sleep(60)
-    # pump.send_command(water, 'STP')
+    pump.send_command(intralipid, 'STP')
     print("Flush finished!")
 
     # Set Flow Rate to desired dilution (ml/min)
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     laserDriver.turn_ld_off()
     print('Finished measurements.')
 
-    # Flush 2 ml/min for 1 min
+    # Flush 1 ml/min for 1 min
     print("Flushing with water...")
     pump.send_command(water, 'RAT 1 MM')
     pump.send_command(water, 'RUN')
@@ -103,17 +103,15 @@ if __name__ == "__main__":
     pump.send_command(water, 'STP')
     print("End flush finished!")
 
-    message = twilioCli.messages.create(
-        body='Experiment Finished',
-        from_=myTwilioNumber,
-        to=myCellPhone
-    )
-
     # Analyse Data
     print("Analysing data files...")
     df = folder_analysis(log['measurementID'])
-    print("Done! Now plotting...")
+    # print("Done! Now plotting...")
     # plot_analysis(df, folder=log['measurementID'])
     print("Finito!")
 
-
+    # message = twilioCli.messages.create(
+    #     body='Experiment Finished',
+    #     from_=myTwilioNumber,
+    #     to=myCellPhone
+    # )
