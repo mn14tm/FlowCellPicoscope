@@ -57,17 +57,17 @@ def analysis(file):
     # Close hdf5 file
     store.close()
 
-    # # Calculate lifetime
-    # popt = fit_decay(x, y)
-    #
-    # # Append lifetime to individual measurement dataframe
-    # df_file['A'] = popt[0]
-    # df_file['tau'] = popt[1]
-    # df_file['c'] = popt[2]
+    # Calculate lifetime
+    popt = fit_decay(x, y)
 
-    # Reflection mean and std calculation
-    df_file['mean'] = np.mean(y)
-    df_file['std'] = np.std(y)
+    # Append lifetime to individual measurement dataframe
+    df_file['A'] = popt[0]
+    df_file['tau'] = popt[1]
+    df_file['c'] = popt[2]
+
+    # # Reflection mean and std calculation
+    # df_file['mean'] = np.mean(y)
+    # df_file['std'] = np.std(y)
     return df_file
 
 

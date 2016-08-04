@@ -25,7 +25,7 @@ if __name__ == "__main__":
     myCellPhone = '+447932553111'
 
     # Setup laser diode driver
-    log["current"] = 0.07  # Laser drive current(A)
+    log["current"] = 0.5  # Laser drive current(A)
     laserDriver = ITC4001()
     laserDriver.set_ld_current(log["current"])
     laserDriver.turn_ld_on()
@@ -105,13 +105,14 @@ if __name__ == "__main__":
 
     # Analyse Data
     print("Analysing data files...")
+    # log['measurementID'] = 1470305131.492201
     df = folder_analysis(log['measurementID'])
-    # print("Done! Now plotting...")
-    # plot_analysis(df, folder=log['measurementID'])
+    print("Done! Now plotting...")
+    plot_analysis(df, folder=log['measurementID'])
     print("Finito!")
 
-    # message = twilioCli.messages.create(
-    #     body='Experiment Finished',
-    #     from_=myTwilioNumber,
-    #     to=myCellPhone
-    # )
+    message = twilioCli.messages.create(
+        body='Experiment Finished',
+        from_=myTwilioNumber,
+        to=myCellPhone
+    )

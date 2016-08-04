@@ -20,10 +20,10 @@ class Picoscope:
 
         self.ps.setChannel("A", coupling="DC", VRange=5.0, VOffset=-4.0, enabled=True)
         self.ps.setChannel("B", coupling="DC", VRange=5.0, VOffset=0, enabled=False)
-        self.ps.setSimpleTrigger(trigSrc="External", threshold_V=2.0, direction="Rising", timeout_ms=5000)
+        self.ps.setSimpleTrigger(trigSrc="External", threshold_V=2.0, direction="Falling", timeout_ms=5000)
 
         # Set capture duration, s
-        waveformDuration = 50E-3
+        waveformDuration = 100E-3
         obsDuration = 1*waveformDuration
 
         # Set sampling rate, Hz
