@@ -153,8 +153,8 @@ def sweeps_number(sweeps, log, arduino, scope, laserDriver):
 
         if time.time() - start > 3:
             arduino.get_data()
-            log['t_in'] = arduino.t_in
-            log['t_out'] = arduino.t_out
+            # log['t_in'] = arduino.t_in
+            # log['t_out'] = arduino.t_out
             log['tempC'] = arduino.tempC
             log['humidity'] = arduino.humidity
             arduino.request_data()
