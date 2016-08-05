@@ -3,7 +3,7 @@ import os
 from tqdm import tqdm
 import pandas as pd
 
-from LabOnChip.HelperFunctions import folder_analysis, plot_analysis
+from LabOnChip.HelperFunctions import folder_analysis, plot_analysis, copy_data
 from LabOnChip.Devices.ITC4001 import ITC4001
 from LabOnChip.Devices.Picoscope import Picoscope
 from LabOnChip.Devices.Arduino import Arduino
@@ -48,8 +48,8 @@ def sweeps_number(sweeps, log, arduino, scope, laserDriver):
 
 if __name__ == "__main__":
     # Measurement Info Dictionary
-    log = dict(measurementID='T26_reflectance_standard',
-               chip='T27',
+    log = dict(measurementID='T2_reflectance_standard',
+               chip='T2',
                medium='Reflectance Standards'
                )
 
@@ -95,8 +95,9 @@ if __name__ == "__main__":
 
     # Analyse Data
     print("Analysing data files...")
-    # log['measurementID'] = 1470305131.492201
     df = folder_analysis(log['measurementID'])
     print("Done! Now plotting...")
     plot_analysis(df, folder=log['measurementID'])
+    print("Copying files to network...")
+    copy_data(str(log['measurementID']))
     print("Finito!")

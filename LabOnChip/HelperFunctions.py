@@ -9,6 +9,7 @@ import glob as gb
 from scipy.optimize import curve_fit
 from multiprocessing import Pool
 from datetime import datetime
+import shutil, errno
 
 
 # Helper Functions
@@ -216,3 +217,25 @@ def sweeps_time(mins, log, arduino, scope, laserDriver):
         rawData = pd.Series(data)
         storeRaw.put('data/', rawData)
         storeRaw.close()
+
+
+def copy_all_data(src='../Data/', dst='Z:/LabOnChip/Data', symlinks=False, ignore=None):
+    # Copies all data in a folder to the dst folder
+    # http://tinyurl.com/q9xc492
+    if not os.path.exists(dst):
+        print("Destination does not exist!")
+        # os.makedirs(dst)
+    for item in os.listdir(src):
+        s = os.path.join(src, item)
+        d = os.path.join(dst, item)
+        if os.path.isdir(s):
+            shutil.copytree(s, d, symlinks, ignore)
+        else:
+            if not os.path.exists(d) or os.stat(s).st_mtime - os.stat(d).st_mtime > 1:
+                shutil.copy2(s, d)
+
+
+def copy_data(folder, src='../Data/', dst='Z:/LabOnChip/Data/', symlinks=False, ignore=None):
+    s = src + folder
+    d = dst + folder
+    shutil.copytree(s, d, symlinks, ignore)
