@@ -1,2 +1,5 @@
 # Created by .ignore support plugin (hsz.mobi)
 Data/
+.ipynb_checkpoints/
+Pipe_inOut
+Pipe_inOutFifo
