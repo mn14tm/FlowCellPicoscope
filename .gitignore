@@ -3,3 +3,5 @@ Data/
 .ipynb_checkpoints/
 Pipe_inOut
 Pipe_inOutFifo
+.idea/workspace.xml
+.idea
