@@ -18,7 +18,7 @@ class Picoscope:
         bitRes = 16
         self.ps.setResolution(str(bitRes))
 
-        self.ps.setChannel("A", coupling="DC", VRange=2.0, VOffset=-1.5, enabled=True)
+        self.ps.setChannel("A", coupling="DC", VRange=2.0, VOffset=-1.8, enabled=True)
         self.ps.setChannel("B", coupling="DC", VRange=5.0, VOffset=0, enabled=False)
         self.ps.setSimpleTrigger(trigSrc="External", threshold_V=2.0, direction="Falling", timeout_ms=5000)
 

@@ -48,7 +48,7 @@ def sweeps_number(sweeps, log, arduino, scope, laserDriver):
 
 if __name__ == "__main__":
     # Measurement Info Dictionary
-    log = dict(measurementID='T2_reflectance_standard',
+    log = dict(measurementID=str(datetime.now().timestamp()),
                chip='T2',
                medium='Reflectance Standards'
                )
@@ -83,7 +83,10 @@ if __name__ == "__main__":
             laserDriver.turn_ld_on()
             time.sleep(5)  # Wait for laser driver to fire up
             log['optical power'] = laserDriver.get_optical_power()
-            scope.show_signal()  # Show a single sweep with the fit
+
+            if current == 0.5:
+                scope.show_signal()  # Show a single sweep with the fit
+
             # Capture and fit single sweeps
             sweeps_number(sweeps=200, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
             laserDriver.turn_ld_off()
