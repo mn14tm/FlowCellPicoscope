@@ -2,7 +2,7 @@ import time
 import os
 from tqdm import tqdm
 import pandas as pd
-
+import winsound
 from LabOnChip.HelperFunctions import folder_analysis, plot_analysis, copy_data
 from LabOnChip.Devices.ITC4001 import ITC4001
 from LabOnChip.Devices.Picoscope import Picoscope
@@ -54,12 +54,7 @@ if __name__ == "__main__":
                )
 
     # Setup laser diode driver
-    log["current"] = 0.5  # Laser drive current(A)
     laserDriver = ITC4001()
-    laserDriver.set_ld_current(log["current"])
-    laserDriver.turn_ld_on()
-    log['optical power'] = laserDriver.get_optical_power()
-    laserDriver.turn_ld_off()
 
     # Setup picoscope for logging
     scope = Picoscope()
@@ -73,20 +68,30 @@ if __name__ == "__main__":
     log['humidity'] = arduino.humidity
 
     # Set Flow Rate to desired dilution (ml/min)
-    for reflectance in [0, 2, 5, 10, 20, 40, 60, 80, 99]:
+    for reflectance in [99, 80, 60, 40, 20, 10, 5, 2, 0]:
         print("Place reflectance {} onto chip (0 is air):".format(reflectance))
         time.sleep(15)
         print("Measuring...")
 
         # Update concentration to save to data files
         log['concentration'] = reflectance
-        laserDriver.turn_ld_on()
-        time.sleep(5)  # Wait for laser driver to fire up
-        scope.show_signal()  # Show a single sweep with the fit
-        # Capture and fit single sweeps
-        sweeps_number(sweeps=200, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
-        laserDriver.turn_ld_off()
-        time.sleep(1)
+
+        # Sweep over various pump powers
+        for current in [0.5, 0.4, 0.3, 0.2, 0.1]:
+            log["current"] = current  # Laser drive current(A)
+            laserDriver.set_ld_current(log["current"])
+            laserDriver.turn_ld_on()
+            time.sleep(5)  # Wait for laser driver to fire up
+            log['optical power'] = laserDriver.get_optical_power()
+            scope.show_signal()  # Show a single sweep with the fit
+            # Capture and fit single sweeps
+            sweeps_number(sweeps=200, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
+            laserDriver.turn_ld_off()
+            time.sleep(1)
+        try:
+            winsound.Beep(500, 1000)
+        except:
+            pass
         print("Measurement finished")
 
     # Stop and close all instruments

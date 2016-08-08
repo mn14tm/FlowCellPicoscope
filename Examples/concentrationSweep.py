@@ -5,7 +5,7 @@ from LabOnChip.Devices.ITC4001 import ITC4001
 from LabOnChip.Devices.SyringePump import SyringePump
 from LabOnChip.Devices.Picoscope import Picoscope
 from LabOnChip.Devices.Arduino import Arduino
-from LabOnChip.HelperFunctions import folder_analysis, plot_analysis, dilution, sweeps_time, sweeps_number
+from LabOnChip.HelperFunctions import folder_analysis, plot_analysis, dilution, sweeps_time, sweeps_number, copy_data
 from datetime import datetime
 from twilio.rest import TwilioRestClient
 
@@ -13,7 +13,7 @@ from twilio.rest import TwilioRestClient
 if __name__ == "__main__":
     # Measurement Info Dictionary
     log = dict(measurementID=datetime.now().timestamp(),
-               chip='Blank',
+               chip='T2',
                medium='Intralipid (%)'
                )
 
@@ -116,3 +116,7 @@ if __name__ == "__main__":
         from_=myTwilioNumber,
         to=myCellPhone
     )
+
+    print("Copying files to network...")
+    copy_data(str(log['measurementID']))
+    print("Finito!")

@@ -220,7 +220,7 @@ def sweeps_time(mins, log, arduino, scope, laserDriver):
 
 
 def copy_all_data(src='../Data/', dst='Z:/LabOnChip/Data', symlinks=False, ignore=None):
-    # Copies all data in a folder to the dst folder
+    # Copies all data in src folder to the dst folder
     # http://tinyurl.com/q9xc492
     if not os.path.exists(dst):
         print("Destination does not exist!")
