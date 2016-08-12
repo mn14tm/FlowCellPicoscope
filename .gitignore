@@ -4,3 +4,5 @@ Data/
 Pipe_inOut
 Pipe_inOutFifo
 .idea/workspace.xml
+*_pycache_*
+*.log
