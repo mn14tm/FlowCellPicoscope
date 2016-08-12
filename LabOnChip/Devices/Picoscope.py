@@ -125,3 +125,4 @@ if __name__ == "__main__":
     scope = Picoscope()
     scope.openScope()
     scope.show_signal()
+    scope.closeScope()

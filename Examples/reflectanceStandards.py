@@ -49,7 +49,7 @@ def sweeps_number(sweeps, log, arduino, scope, laserDriver):
 if __name__ == "__main__":
     # Measurement Info Dictionary
     log = dict(measurementID=str(datetime.now().timestamp()),
-               chip='T2',
+               chip='T26',
                medium='Reflectance Standards'
                )
 
@@ -88,7 +88,7 @@ if __name__ == "__main__":
                 scope.show_signal()  # Show a single sweep with the fit
 
             # Capture and fit single sweeps
-            sweeps_number(sweeps=200, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
+            sweeps_number(sweeps=500, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
             laserDriver.turn_ld_off()
             time.sleep(1)
         try:
