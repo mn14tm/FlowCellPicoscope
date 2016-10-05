@@ -12,12 +12,12 @@ from datetime import datetime
 if __name__ == "__main__":
     # Measurement Info Dictionary
     log = dict(measurementID=datetime.now().timestamp(),
-               chip='T6',
-               medium='Intralipid (%)'
+               chip='T2',
+               medium='Air'
                )
 
     # Setup laser diode driver
-    log["current"] = 0.07  # Laser drive current(A)
+    log["current"] = 0.5  # Laser drive current(A)
     laserDriver = ITC4001()
     laserDriver.set_ld_current(log["current"])
     laserDriver.turn_ld_on()
