@@ -18,7 +18,7 @@ class Picoscope:
         bitRes = 16
         self.ps.setResolution(str(bitRes))
 
-        self.ps.setChannel("A", coupling="DC", VRange=2.0, VOffset=-1.8, enabled=True)
+        self.ps.setChannel("A", coupling="DC", VRange=2.0, VOffset=-1.8, enabled=True, BWLimited=1)
         self.ps.setChannel("B", coupling="DC", VRange=5.0, VOffset=0, enabled=False)
         self.ps.setSimpleTrigger(trigSrc="External", threshold_V=2.0, direction="Falling", timeout_ms=5000)
 
@@ -78,6 +78,7 @@ class Picoscope:
         fig.canvas.manager.window.activateWindow()
         fig.canvas.manager.window.raise_()
         plt.show()
+        # print(np.mean(data), np.std(data))
 
     def show_decay(self):
         """ Measure a single decay and show with the fit in a plot. """

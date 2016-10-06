@@ -30,7 +30,10 @@ def fit_decay(t, y):
     tau_guess = t[t_loc[0][0]]
 
     # Fit decay
-    popt, pcov = curve_fit(mono_exp_decay, t, y, p0=(a_guess, tau_guess, c_guess))
+    try:
+        popt, pcov = curve_fit(mono_exp_decay, t, y, p0=(a_guess, tau_guess, c_guess))
+    except RuntimeError:
+        popt = [np.nan, np.nan, np.nan]
     return popt
 
 
@@ -57,6 +60,11 @@ def analysis(file):
 
     # Close hdf5 file
     store.close()
+
+    # Optional drop x > cutoff ms
+    # iloc = np.where(x > 1)
+    # x = x[iloc]
+    # y = np.asarray(y)[iloc]
 
     # Calculate lifetime
     popt = fit_decay(x, y)
@@ -89,6 +97,33 @@ def folder_analysis(folder):
 
     # merging parts processed by different processes
     df = pd.concat(results, axis=0)
+
+    # Sort rows in measurement dataframe by datetime
+    df = df.set_index('datetime').sort_index()
+    df = df.reset_index()
+
+    # Save dataframe
+    df.to_csv(directory + "/analysis.csv")
+
+    store = pd.HDFStore(directory + "/analysis.h5")
+    store['df'] = df  # save it
+    store.close()
+
+    return df
+
+
+def folder_analysis2(folder):
+    """ Use sinle thread to analyse raw files inside the timestamp folder"""
+    # Get raw data files list
+    directory = "../Data/" + str(folder)
+    files = gb.glob( directory + "/raw/*.h5")
+
+    df = pd.DataFrame([])
+
+    # Do fitting
+    for file in tqdm(files):
+        data = analysis(file)
+        df = df.append(data)
 
     # Sort rows in measurement dataframe by datetime
     df = df.set_index('datetime').sort_index()

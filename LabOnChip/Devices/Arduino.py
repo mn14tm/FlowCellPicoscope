@@ -22,7 +22,7 @@ class Arduino:
         # Wait for arduino to fire up
         time.sleep(3)
 
-        # Initialise variables
+        # Get current variable status
         self.request_data()
         time.sleep(3)
         self.get_data()
