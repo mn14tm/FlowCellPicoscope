@@ -1,13 +1,11 @@
 import time
 import numpy as np
-
+from datetime import datetime
 from LabOnChip.Devices.ITC4001 import ITC4001
-from LabOnChip.Devices.SyringePump import SyringePump
 from LabOnChip.Devices.Picoscope import Picoscope
 from LabOnChip.Devices.Arduino import Arduino
-from LabOnChip.HelperFunctions import folder_analysis, plot_analysis, dilution, sweeps_time, sweeps_number, copy_data
-from datetime import datetime
-from twilio.rest import TwilioRestClient
+from LabOnChip.HelperFunctions import folder_analysis, plot_analysis, dilution, \
+    sweeps_time, sweeps_number, copy_data
 
 
 if __name__ == "__main__":
@@ -16,13 +14,6 @@ if __name__ == "__main__":
                chip='T2',
                medium='D2o (%)'
                )
-
-    # Setup texting for notification when complete
-    accountSID = 'AC8e87f7e3dfec4552532dcae2480fa021'
-    authToken = 'a576d5aac28efc503b50b5958e9276f0'
-    twilioCli = TwilioRestClient(accountSID, authToken)
-    myTwilioNumber = '+441725762055'
-    myCellPhone = '+447932553111'
 
     # Setup laser diode driver
     log["current"] = 0.5  # Laser drive current(A)
@@ -126,12 +117,5 @@ if __name__ == "__main__":
     plot_analysis(df, folder=log['measurementID'])
     print("Finito!")
 
-    message = twilioCli.messages.create(
-        body='Experiment Finished',
-        from_=myTwilioNumber,
-        to=myCellPhone
-    )
-
-    print("Copying files to network...")
-    # copy_data(str(log['measurementID']))
-    print("Finito!")
+    # Alert me via text
+    text_when_done()

@@ -1,33 +1,34 @@
-import time
 import os
+import errno
 import numpy as np
-import matplotlib.dates as mdates
-from tqdm import tqdm
 import pandas as pd
 import matplotlib.pyplot as plt
 import glob as gb
+from tqdm import tqdm
 from scipy.optimize import curve_fit
-from multiprocessing import Pool
-from datetime import datetime
-import shutil, errno
 
 
 # Helper Functions
 def mono_exp_decay(t, a, tau, c):
-    """ Mono-exponential decay function. t is the time."""
+    """ Mono-exponential decay function. t is the time.
+    """
     return a * np.exp(-t / tau) + c
 
 
 def fit_decay(t, y):
-    """ Function to fit the data, y, to the mono-exponential decay."""
-    # Guess initial fitting parameters
-    a_guess = max(y) - min(y)
-    c_guess = min(y)
-
+    """ Function to fit the data, y, to the mono-exponential decay.
+    Return fitting parameters [a, tau, c].
+    """
+    # Normalise data
     y_norm = y - min(y)
     y_norm = y_norm / max(y_norm)
+    # Locate time where 1/e of normalised intensity
     t_loc = np.where(y_norm <= 1/np.e)
+
+    # Guess initial fitting parameters
+    a_guess = max(y) - min(y)
     tau_guess = t[t_loc[0][0]]
+    c_guess = min(y)
 
     # Fit decay
     try:
@@ -81,42 +82,11 @@ def analysis(file):
 
 
 def folder_analysis(folder):
-    """ Use multiprocessing to analysise raw files inside the timestamp folder"""
-    pool = Pool()
-
+    """ Use single thread to analyse data (h5) files inside: folder/raw
+    """
     # Get raw data files list
     directory = "../Data/" + str(folder)
-    files = gb.glob( directory + "/raw/*.h5")
-
-    # Do fitting
-    results = pool.map(analysis, files)
-
-    # close the pool and wait for the work to finish
-    pool.close()
-    pool.join()
-
-    # merging parts processed by different processes
-    df = pd.concat(results, axis=0)
-
-    # Sort rows in measurement dataframe by datetime
-    df = df.set_index('datetime').sort_index()
-    df = df.reset_index()
-
-    # Save dataframe
-    df.to_csv(directory + "/analysis.csv")
-
-    store = pd.HDFStore(directory + "/analysis.h5")
-    store['df'] = df  # save it
-    store.close()
-
-    return df
-
-
-def folder_analysis2(folder):
-    """ Use sinle thread to analyse raw files inside the timestamp folder"""
-    # Get raw data files list
-    directory = "../Data/" + str(folder)
-    files = gb.glob( directory + "/raw/*.h5")
+    files = gb.glob(directory + "/raw/*.h5")
 
     df = pd.DataFrame([])
 
@@ -139,96 +109,89 @@ def folder_analysis2(folder):
     return df
 
 
-def plot_analysis(df, folder):
-    # Directory to save plots to
+def folder_analysis_pool(folder):
+    """ Use multiprocessing to analysise raw files inside the timestamp folder"""
+    from multiprocessing import Pool
+
+    # Get raw data files list
     directory = "../Data/" + str(folder)
+    files = gb.glob( directory + "/raw/*.h5")
+
+    # Do fitting
+    pool = Pool()
+    results = pool.map(analysis, files)
+    # close the pool and wait for the work to finish
+    pool.close()
+    pool.join()
+
+    # merging parts processed by different processes
+    df = pd.concat(results, axis=0)
+
+    # Sort rows in measurement dataframe by datetime
+    df = df.set_index('datetime').sort_index()
+    df = df.reset_index()
+
+    # Save dataframe
+    df.to_csv(directory + "/analysis.csv")
+
+    store = pd.HDFStore(directory + "/analysis.h5")
+    store['df'] = df  # save it
+    store.close()
+
+    return df
+
+
+def plot_analysis(df, folder, dir='../Data/', save=True, hist=False):
+    import matplotlib.dates as mdates
+
+    # Directory to save plots to
+    directory = dir + str(folder)
 
     # Create plot of lifetime vs time
-    fig, ax = plt.subplots()
-    ax.plot(df['datetime'], df['tau'], 'o', alpha=0.3)
-    # ax.plot(df['datetime'], df['tempC'], '-')
+    fig, (ax1, ax2) = plt.subplots(1, 2, sharex=True)
+    ax1.plot(df['datetime'], df['tau'], 'o', alpha=0.3)
+    ax2.plot(df['datetime'], df['A'], 'o', alpha=0.3)
 
-    # format the ticks
-    # ax.xaxis.set_major_locator(mdates.MinuteLocator())
-    # ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
-    # ax.xaxis.set_minor_locator(mdates.SecondLocator(bysecond=np.arange(0, 60, 10)))
-
-    ax.grid(True)
     fig.autofmt_xdate()
-
-    plt.xlabel('Time (H:M)')
-    plt.ylabel('Lifetime (ms)')
-    # plt.tight_layout()
+    ax1.grid(True)
+    ax2.grid(True)
+    ax2.set_xlabel('Time (H:M)')
+    ax1.set_ylabel('Lifetime (ms)')
+    ax2.set_ylabel('Amplitude (A.U.)')
+    plt.tight_layout()
     plt.ticklabel_format(useOffset=False, axis='y')
-    # plt.savefig(directory + '/lifetimeVsTime.png', dpi=500)
+    if save:
+        plt.savefig(directory + '/lifetimeVsTime.png', dpi=300)
 
     # Create histogram plot
-    fig2, ax2 = plt.subplots()
-    ax2.hist(df['tau'], bins=20)
-
-    plt.ticklabel_format(useOffset=False)
-    plt.xlabel('Lifetime (ms)')
-    plt.ylabel('Frequency')
-    # plt.savefig(directory + '/histogram.png', dpi=500)
+    if hist:
+        fig2, ax2 = plt.subplots()
+        ax2.hist(df['tau'], bins=20)
+        plt.ticklabel_format(useOffset=False)
+        plt.xlabel('Lifetime (ms)')
+        plt.ylabel('Frequency')
+        if save:
+            plt.savefig(directory + '/histogram.png', dpi=300)
     plt.show()
 
 
-def sweeps_number(sweeps, log, arduino, scope, laserDriver):
-    """ Measure and save single sweeps for a given number of sweeps. """
-    log['sweeps'] = sweeps
+def sweeps_number(sweeps, log, arduino, scope, laserDriver, dir='../Data/'):
+    """ Measure and save single sweeps for a given number of sweeps.
+    """
+    from datetime import datetime
+    import time
 
     # Make directory to store files
-    directory = "../Data/" + str(log['measurementID']) + "/raw"
+    directory = dir + str(log['measurementID']) + "/raw"
     if not os.path.exists(directory):
         os.makedirs(directory)
 
     # Collect and save data for each sweep
+    log['sweeps'] = sweeps
     start = time.time()
     for i in tqdm(range(sweeps)):
         log['sweep_no'] = i + 1
 
-        if time.time() - start > 3:
-            arduino.get_data()
-            # log['t_in'] = arduino.t_in
-            # log['t_out'] = arduino.t_out
-            log['tempC'] = arduino.tempC
-            log['humidity'] = arduino.humidity
-            arduino.request_data()
-            start = time.time()
-            # Update laser measured optical power (by photodiode internal)
-            log['optical power'] = laserDriver.get_optical_power()
-
-        # Collect data from picoscope (detector)
-        scope.armMeasure()
-        log['datetime'] = datetime.now()
-        data = scope.measure()
-
-        fname = directory + "/" + str(log['datetime'].timestamp()) + ".h5"
-        storeRaw = pd.HDFStore(fname)
-        storeRaw.put('log/', pd.DataFrame(log, index=[0]))
-
-        rawData = pd.Series(data)
-        storeRaw.put('data/', rawData)
-        storeRaw.close()
-
-
-def sweeps_time(mins, log, arduino, scope, laserDriver):
-    """ Measure and save single sweeps over a given run_time. """
-    log['run_time'] = mins
-    # Make directory to store files
-    directory = "../Data/" + str(log['measurementID']) + "/raw"
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    sweep = 0  # Initialise sweep number
-    timeout = time.time() + 60 * mins  # mins minutes from now
-    print("Finished at: {end}".format(end=time.asctime(time.localtime(timeout))))
-    start = time.time()
-    while time.time() < timeout:
-        sweep += 1
-        log['sweep_no'] = sweep
-
-        # Arduino and laser power Update every 3 seconds
         if time.time() - start > 3:
             arduino.get_data()
             log['t_in'] = arduino.t_in
@@ -237,26 +200,91 @@ def sweeps_time(mins, log, arduino, scope, laserDriver):
             log['humidity'] = arduino.humidity
             arduino.request_data()
             start = time.time()
-            # Update laser measured optical power (by photodiode internal)
-            log['optical power'] = 0 # laserDriver.get_optical_power()
+            # Update laser measured optical power (by internal photodiode)
+            log['optical power'] = laserDriver.get_optical_power()
 
         # Collect data from picoscope (detector)
         scope.armMeasure()
-        log['datetime'] = datetime.now()
         data = scope.measure()
+        data = pd.Series(data)
 
-        fname = directory + "/" + str(log['datetime'].timestamp()) + ".h5"
-        storeRaw = pd.HDFStore(fname)
+        # Save data as h5 file
+        storeRaw = pd.HDFStore(directory + "/" + str(log['datetime'].timestamp()) + ".h5")
         storeRaw.put('log/', pd.DataFrame(log, index=[0]))
-
-        rawData = pd.Series(data)
-        storeRaw.put('data/', rawData)
+        storeRaw.put('data/', data)
         storeRaw.close()
 
 
-def copy_all_data(src='../Data/', dst='Z:/LabOnChip/Data', symlinks=False, ignore=None):
-    # Copies all data in src folder to the dst folder
-    # http://tinyurl.com/q9xc492
+def sweeps_time(mins, log, arduino, scope, laserDriver, dir='../Data/'):
+    """ Measure and save single sweeps over a given time.
+    """
+    from datetime import datetime
+    import time
+    log['run_time'] = mins
+    # Make directory to store files
+    directory = dir + str(log['measurementID']) + "/raw"
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    # minutes from now to run for
+    timeout = time.time() + 60 * mins
+    print("Finished at: {end}".format(end=time.asctime(time.localtime(timeout))))
+
+    # Begin
+    start = time.time()
+    sweep = 0
+    while time.time() < timeout:
+        sweep += 1
+        log['sweep_no'] = sweep
+        log['datetime'] = datetime.now()
+
+        # Arduino and laser power update every 3 seconds (delay is 3 seconds due to calling method)
+        if time.time() - start > 3:
+            arduino.get_data()
+            log['t_in'] = arduino.t_in
+            log['t_out'] = arduino.t_out
+            log['tempC'] = arduino.tempC
+            log['humidity'] = arduino.humidity
+            arduino.request_data()
+            start = time.time()
+            # Update laser measured optical power (by internal photodiode)
+            log['optical power'] = laserDriver.get_optical_power()
+
+        # Collect data from picoscope (detector)
+        scope.armMeasure()
+        data = scope.measure()
+        data = pd.Series(data)
+
+        # Save data as h5 file
+        storeRaw = pd.HDFStore(directory + "/" + str(log['datetime'].timestamp()) + ".h5")
+        storeRaw.put('log/', pd.DataFrame(log, index=[0]))
+        storeRaw.put('data/', data)
+        storeRaw.close()
+
+
+def text_when_done():
+    """ Send me a text saying 'Experiment Finished'.
+    """
+    from twilio.rest import TwilioRestClient
+
+    # Setup texting for notification when complete
+    accountSID = 'AC8e87f7e3dfec4552532dcae2480fa021'
+    authToken = 'a576d5aac28efc503b50b5958e9276f0'
+    twilioCli = TwilioRestClient(accountSID, authToken)
+    myTwilioNumber = '+441725762055'
+    myCellPhone = '+447932553111'
+
+    message = twilioCli.messages.create(
+        body='Experiment Finished',
+        from_=myTwilioNumber,
+        to=myCellPhone)
+    print(message.sid)
+
+
+def copy_data(src='../Data/', dst='Z:/LabOnChip/Data', symlinks=False, ignore=None):
+    """ Copies all data in src folder to the dst folder. See http://tinyurl.com/q9xc492
+    """
+    import shutil
     if not os.path.exists(dst):
         print("Destination does not exist!")
         # os.makedirs(dst)
@@ -268,9 +296,3 @@ def copy_all_data(src='../Data/', dst='Z:/LabOnChip/Data', symlinks=False, ignor
         else:
             if not os.path.exists(d) or os.stat(s).st_mtime - os.stat(d).st_mtime > 1:
                 shutil.copy2(s, d)
-
-
-def copy_data(folder, src='../Data/', dst='Z:/LabOnChip/Data/', symlinks=False, ignore=None):
-    s = src + folder
-    d = dst + folder
-    shutil.copytree(s, d, symlinks, ignore)

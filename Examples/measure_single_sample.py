@@ -1,15 +1,16 @@
 import time
 import numpy as np
-
+from datetime import datetime
 from LabOnChip.Devices.ITC4001 import ITC4001
 from LabOnChip.Devices.Picoscope import Picoscope
 from LabOnChip.Devices.Arduino import Arduino
-from LabOnChip.HelperFunctions import folder_analysis, plot_analysis, dilution, sweeps_time, sweeps_number, copy_data
-from datetime import datetime
+from LabOnChip.HelperFunctions import folder_analysis, plot_analysis, dilution, \
+    sweeps_time, sweeps_number, copy_data
+
 
 if __name__ == "__main__":
     # Measurement Info Dictionary
-    log = dict(measurementID='T2_refractive_index_liquids4',  # datetime.now().timestamp(),
+    log = dict(measurementID='T2_refractive_index_liquids3',  # datetime.now().timestamp(),
                chip='T2',
                medium='IPA',
                n=1.37)
