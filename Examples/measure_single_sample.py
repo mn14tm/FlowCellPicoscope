@@ -6,15 +6,13 @@ from LabOnChip.Devices.Picoscope import Picoscope
 from LabOnChip.Devices.Arduino import Arduino
 from LabOnChip.HelperFunctions import folder_analysis, plot_analysis, dilution, sweeps_time, sweeps_number, copy_data
 from datetime import datetime
-from twilio.rest import TwilioRestClient
-
 
 if __name__ == "__main__":
     # Measurement Info Dictionary
-    log = dict(measurementID='Air',  # datetime.now().timestamp(),
+    log = dict(measurementID='T2_refractive_index_liquids4',  # datetime.now().timestamp(),
                chip='T2',
-               medium='Air_end'
-               )
+               medium='IPA',
+               n=1.37)
 
     # Setup laser diode driver
     log["current"] = 0.5  # Laser drive current(A)
@@ -43,11 +41,11 @@ if __name__ == "__main__":
         log["current"] = current  # Laser drive current(A)
         laserDriver.set_ld_current(log["current"])
         laserDriver.turn_ld_on()
-        time.sleep(5)  # Wait for laser driver to fire up
+        time.sleep(10)  # Wait for laser driver to fire up
         log['optical power'] = laserDriver.get_optical_power()
 
         # Capture and fit single sweeps
-        sweeps_number(sweeps=250, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
+        sweeps_number(sweeps=400, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
         # sweeps_time(mins=1, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
         laserDriver.turn_ld_off()
 

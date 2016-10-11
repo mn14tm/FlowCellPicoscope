@@ -23,7 +23,7 @@ class Picoscope:
         self.ps.setSimpleTrigger(trigSrc="External", threshold_V=2.0, direction="Falling", timeout_ms=5000)
 
         # Set capture duration, s
-        waveformDuration = 100E-3
+        waveformDuration = 120E-3
         obsDuration = 1*waveformDuration
 
         # Set sampling rate, Hz
