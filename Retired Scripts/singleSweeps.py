@@ -26,12 +26,12 @@ t_out = 0
 
 
 def mono_exp_decay(t, a, tau, c):
-    """ Mono-exponential decay function. t is the time."""
+    """ Mono-exponential fitting function. t is the time."""
     return a * np.exp(-t / tau) + c
 
 
 def fit_decay(t, y):
-    """ Function to fit the data, y, to the mono-exponential decay."""
+    """ Function to fit the data, y, to the mono-exponential fitting."""
     # Guess initial fitting parameters
     a_guess = max(y) - min(y)
 
@@ -99,7 +99,7 @@ class DecayMeasure:
         return self.ps.getDataV("A")
 
     def show_signal(self):
-        """ Measure a single decay and show with the fit in a plot. """
+        """ Measure a single fitting and show with the fit in a plot. """
 
         # Create a time axis for the plots
         self.x = np.arange(self.res[1]) * self.res[0]

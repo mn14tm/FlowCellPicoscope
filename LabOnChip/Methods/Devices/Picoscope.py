@@ -1,9 +1,10 @@
 import time
-import numpy as np
-import matplotlib.pyplot as plt
 
+import matplotlib.pyplot as plt
+import numpy as np
 from picoscope import ps5000a
-from LabOnChip.HelperFunctions import fit_decay, mono_exp_decay
+
+from labonchip.Methods.HelperFunctions import fit_decay, decay
 
 
 class Picoscope:
@@ -81,7 +82,7 @@ class Picoscope:
         # print(np.mean(data), np.std(data))
 
     def show_decay(self):
-        """ Measure a single decay and show with the fit in a plot. """
+        """ Measure a single fitting and show with the fit in a plot. """
 
         # Create a time axis for the plots
         x = np.arange(self.res[1]) * self.res[0]
@@ -93,7 +94,7 @@ class Picoscope:
 
         # Calculate lifetime
         popt = fit_decay(x, data)
-        residuals = data - mono_exp_decay(x, *popt)
+        residuals = data - decay(x, *popt)
         standd = np.std(residuals)
 
         # Do plots
@@ -103,7 +104,7 @@ class Picoscope:
         timer.add_callback(plt.close)
         ax1.set_title("Lifetime is {0:.4f} $\pm$ {1:.4f} ms".format(popt[1], standd))
         ax1.plot(x, data, 'k.', label="Original Noised Data")
-        ax1.plot(x, mono_exp_decay(x, *popt), 'r-', label="Fitted Curve")
+        ax1.plot(x, decay(x, *popt), 'r-', label="Fitted Curve")
         ax1.axvline(popt[1], color='blue')
         ax1.grid(True, which="major")
         ax1.set_ylabel('Intensity (A.U.)')

@@ -1,9 +1,8 @@
-from LabOnChip.Devices.System import System
-from LabOnChip.Devices.ITC4001 import ITC4001
-from LabOnChip.HelperFunctions import folder_analysis, plot_analysis
-
 from datetime import datetime
 
+from labonchip.Methods.Devices.ITC4001 import ITC4001
+from labonchip.Methods.Devices.System import System
+from labonchip.Methods.HelperFunctions import folder_analysis, plot_analysis
 
 if __name__ == "__main__":
     # Measurement Info

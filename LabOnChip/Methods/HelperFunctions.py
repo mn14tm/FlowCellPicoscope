@@ -1,5 +1,4 @@
 import os
-import errno
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -9,41 +8,34 @@ from scipy.optimize import curve_fit
 
 
 # Helper Functions
-def mono_exp_decay(t, a, tau, c):
-    """ Mono-exponential decay function. t is the time.
+def decay(t, a, tau, c):
+    """
+    Mono-exponential fitting function. t is the time.
     """
     return a * np.exp(-t / tau) + c
 
 
-def fit_decay(t, y):
-    """ Function to fit the data, y, to the mono-exponential decay.
+def fit_decay(x, y):
+    """
+    Function to fit the data, y, to the mono-exponential fitting.
     Return fitting parameters [a, tau, c].
     """
-    # Normalise data
-    y_norm = y - min(y)
-    y_norm = y_norm / max(y_norm)
-    # Locate time where 1/e of normalised intensity
-    t_loc = np.where(y_norm <= 1/np.e)
+
+    # Subtract baseline noise
+    y -= min(y)
+    # Normalise
+    y /= y[0]
 
     # Guess initial fitting parameters
-    a_guess = max(y) - min(y)
-    tau_guess = t[t_loc[0][0]]
-    c_guess = min(y)
+    t_loc = np.where(y <= 1 / np.e)
+    guess = [max(y), x[t_loc[0][0]], min(y)]
 
-    # Fit decay
+    # Fit fitting
     try:
-        popt, pcov = curve_fit(mono_exp_decay, t, y, p0=(a_guess, tau_guess, c_guess))
+        popt, pcov = curve_fit(decay, x, y, p0=guess)
     except RuntimeError:
         popt = [np.nan, np.nan, np.nan]
     return popt
-
-
-def dilution(conc_out, conc_stock, vol_out=1):
-    # Volume of stock required
-    vol_stock = vol_out * conc_out / conc_stock
-    # Volume of dilute required
-    vol_dilute = vol_out - vol_stock
-    return vol_dilute, vol_stock
 
 
 def analysis(file):
@@ -56,16 +48,16 @@ def analysis(file):
     samples = store['log']['sample_no'][0]
     x = np.arange(samples) * fs * 1E3
 
-    # Load decay data
-    y = store['data']
+    # Load fitting data
+    y = np.array(store['data'])
 
     # Close hdf5 file
     store.close()
 
-    # Optional drop x > cutoff ms
-    # iloc = np.where(x > 1)
-    # x = x[iloc]
-    # y = np.asarray(y)[iloc]
+    # Drop beginning data points at start (weird massive drop for T2)
+    drop = 5
+    x = x[drop::]
+    y = y[drop::]
 
     # Calculate lifetime
     popt = fit_decay(x, y)
@@ -81,8 +73,9 @@ def analysis(file):
     return df_file
 
 
-def folder_analysis(folder):
-    """ Use single thread to analyse data (h5) files inside: folder/raw
+def folder_analysis(folder, savename='analysis'):
+    """
+    Use single thread to analyse data (h5) files inside: folder/raw
     """
     # Get raw data files list
     directory = "../Data/" + str(folder)
@@ -100,9 +93,9 @@ def folder_analysis(folder):
     df = df.reset_index()
 
     # Save dataframe
-    df.to_csv(directory + "/analysis.csv")
+    df.to_csv(directory + "/" + savename + ".csv")
 
-    store = pd.HDFStore(directory + "/analysis.h5")
+    store = pd.HDFStore(directory + "/" + savename + ".h5")
     store['df'] = df  # save it
     store.close()
 
@@ -110,7 +103,8 @@ def folder_analysis(folder):
 
 
 def folder_analysis_pool(folder):
-    """ Use multiprocessing to analysise raw files inside the timestamp folder"""
+    """
+    Use multiprocessing to analysise raw files inside the timestamp folder"""
     from multiprocessing import Pool
 
     # Get raw data files list
@@ -175,8 +169,17 @@ def plot_analysis(df, folder, dir='../Data/', save=True, hist=False):
     plt.show()
 
 
+def dilution(conc_out, conc_stock, vol_out=1):
+    # Volume of stock required
+    vol_stock = vol_out * conc_out / conc_stock
+    # Volume of dilute required
+    vol_dilute = vol_out - vol_stock
+    return vol_dilute, vol_stock
+
+
 def sweeps_number(sweeps, log, arduino, scope, laserDriver, dir='../Data/'):
-    """ Measure and save single sweeps for a given number of sweeps.
+    """
+    Measure and save single sweeps for a given number of sweeps.
     """
     from datetime import datetime
     import time
@@ -216,7 +219,8 @@ def sweeps_number(sweeps, log, arduino, scope, laserDriver, dir='../Data/'):
 
 
 def sweeps_time(mins, log, arduino, scope, laserDriver, dir='../Data/'):
-    """ Measure and save single sweeps over a given time.
+    """
+    Measure and save single sweeps over a given time.
     """
     from datetime import datetime
     import time
@@ -263,7 +267,8 @@ def sweeps_time(mins, log, arduino, scope, laserDriver, dir='../Data/'):
 
 
 def text_when_done():
-    """ Send me a text saying 'Experiment Finished'.
+    """
+    Send me a text saying 'Experiment Finished'.
     """
     from twilio.rest import TwilioRestClient
 
@@ -282,7 +287,8 @@ def text_when_done():
 
 
 def copy_data(src='../Data/', dst='Z:/LabOnChip/Data', symlinks=False, ignore=None):
-    """ Copies all data in src folder to the dst folder. See http://tinyurl.com/q9xc492
+    """
+    Copies all data in src folder to the dst folder. See http://tinyurl.com/q9xc492
     """
     import shutil
     if not os.path.exists(dst):

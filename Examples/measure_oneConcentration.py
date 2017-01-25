@@ -1,13 +1,12 @@
 import time
-import numpy as np
-
-from LabOnChip.Devices.ITC4001 import ITC4001
-from LabOnChip.Devices.SyringePump import SyringePump
-from LabOnChip.Devices.Picoscope import Picoscope
-from LabOnChip.Devices.Arduino import Arduino
-from LabOnChip.HelperFunctions import folder_analysis, plot_analysis, dilution, sweeps_time
 from datetime import datetime
 
+from labonchip.Devices.Arduino import Arduino
+from labonchip.Devices.ITC4001 import ITC4001
+from labonchip.Devices.Picoscope import Picoscope
+
+from labonchip.Methods.Devices.SyringePump import SyringePump
+from labonchip.Methods.HelperFunctions import folder_analysis, dilution, sweeps_time
 
 if __name__ == "__main__":
     # Measurement Info Dictionary

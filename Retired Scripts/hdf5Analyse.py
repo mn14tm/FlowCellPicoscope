@@ -13,12 +13,12 @@ from scipy.optimize import curve_fit
 
 
 def mono_exp_decay(t, a, tau, c):
-    """ Mono-exponential decay function. t is the time."""
+    """ Mono-exponential fitting function. t is the time."""
     return a * np.exp(-t / tau) + c
 
 
 def fit_decay(t, y):
-    """ Function to fit the data, y, to the mono-exponential decay."""
+    """ Function to fit the data, y, to the mono-exponential fitting."""
     # Guess initial fitting parameters
     a_guess = max(y) - min(y)
 

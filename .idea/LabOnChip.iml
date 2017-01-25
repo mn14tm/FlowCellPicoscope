@@ -5,9 +5,12 @@
       <excludeFolder url="file://$MODULE_DIR$/Data" />
       <excludeFolder url="file://$MODULE_DIR$/Misc" />
       <excludeFolder url="file://$MODULE_DIR$/Plots" />
+      <excludeFolder url="file://$MODULE_DIR$/labonchip/Data" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.5.1 (C:\Users\mn14tm\AppData\Local\Continuum\Anaconda3\python.exe)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="CondaPython" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="lifetime" />
+    <orderEntry type="module" module-name="lifetime" />
   </component>
   <component name="PyDocumentationSettings">
     <option name="myDocStringFormat" value="Epytext" />

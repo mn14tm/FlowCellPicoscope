@@ -1,13 +1,13 @@
-import numpy as np
-import pandas as pd
-import time
 import os
+import time
 import winsound
 
+import numpy as np
+import pandas as pd
+from labonchip.Devices.Picoscope import Picoscope
 from tqdm import tqdm
-from datetime import datetime
-from LabOnChip.Devices.Picoscope import Picoscope
-from LabOnChip.Devices.Arduino import Arduino
+
+from labonchip.Methods.Devices.Arduino import Arduino
 
 
 class System(Picoscope, Arduino):

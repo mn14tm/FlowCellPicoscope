@@ -1,13 +1,15 @@
-import time
 import os
-from tqdm import tqdm
-import pandas as pd
+import time
 import winsound
-from LabOnChip.HelperFunctions import folder_analysis, plot_analysis, copy_data
-from LabOnChip.Devices.ITC4001 import ITC4001
-from LabOnChip.Devices.Picoscope import Picoscope
-from LabOnChip.Devices.Arduino import Arduino
 from datetime import datetime
+
+import pandas as pd
+from labonchip.Devices.Arduino import Arduino
+from labonchip.Devices.Picoscope import Picoscope
+from tqdm import tqdm
+
+from labonchip.Methods.Devices.ITC4001 import ITC4001
+from labonchip.Methods.HelperFunctions import folder_analysis, plot_analysis, copy_data
 
 
 def sweeps_number(sweeps, log, arduino, scope, laserDriver):

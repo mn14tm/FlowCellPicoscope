@@ -1,5 +1,4 @@
-import time
-from LabOnChip.HelperFunctions import folder_analysis2, plot_analysis
+from labonchip.Methods.HelperFunctions import folder_analysis, plot_analysis
 
 if __name__ == "__main__":
 
@@ -7,7 +6,7 @@ if __name__ == "__main__":
     timestamp = 1474544405.61158
 
     print("Analysing...")
-    df = folder_analysis2(timestamp)
+    df = folder_analysis(timestamp)
 
     print("Done! Now plotting...")
     plot_analysis(df, folder=timestamp)
