@@ -3,39 +3,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import glob as gb
+import lifetime.decay as lf
 from tqdm import tqdm
-from scipy.optimize import curve_fit
-
-
-# Helper Functions
-def decay(t, a, tau, c):
-    """
-    Mono-exponential fitting function. t is the time.
-    """
-    return a * np.exp(-t / tau) + c
-
-
-def fit_decay(x, y):
-    """
-    Function to fit the data, y, to the mono-exponential fitting.
-    Return fitting parameters [a, tau, c].
-    """
-
-    # Subtract baseline noise
-    y -= min(y)
-    # Normalise
-    y /= y[0]
-
-    # Guess initial fitting parameters
-    t_loc = np.where(y <= 1 / np.e)
-    guess = [max(y), x[t_loc[0][0]], min(y)]
-
-    # Fit fitting
-    try:
-        popt, pcov = curve_fit(decay, x, y, p0=guess)
-    except RuntimeError:
-        popt = [np.nan, np.nan, np.nan]
-    return popt
 
 
 def analysis(file):
@@ -54,13 +23,11 @@ def analysis(file):
     # Close hdf5 file
     store.close()
 
-    # Drop beginning data points at start (weird massive drop for T2)
-    drop = 5
-    x = x[drop::]
-    y = y[drop::]
+    # Drop data points at start (weird massive drop for T2)
+    x, y = lf.prepare_data(x, y, reject_start=0, reject_end=0)
 
     # Calculate lifetime
-    popt = fit_decay(x, y)
+    popt = lf.fit_decay(x, y)
 
     # Append lifetime to individual measurement dataframe
     df_file['A'] = popt[0]
