@@ -1,13 +1,15 @@
+import glob as gb
 import os
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import glob as gb
-import lifetime.decay as lf
 from tqdm import tqdm
 
+import lifetime.decay as lf
 
-def analysis(file):
+
+def analysis(file, reject_start=0):
     # Load HDF file
     store = pd.HDFStore(file)
     df_file = store['log']
@@ -24,7 +26,7 @@ def analysis(file):
     store.close()
 
     # Drop data points at start (weird massive drop for T2)
-    x, y = lf.prepare_data(x, y, reject_start=0, reject_end=0)
+    x, y = lf.prepare_data(x, y, reject_start=reject_start, reject_end=0)
 
     # Calculate lifetime
     popt = lf.fit_decay(x, y)
@@ -103,8 +105,6 @@ def folder_analysis_pool(folder):
 
 
 def plot_analysis(df, folder, dir='../Data/', save=True, hist=False):
-    import matplotlib.dates as mdates
-
     # Directory to save plots to
     directory = dir + str(folder)
 
@@ -148,7 +148,6 @@ def sweeps_number(sweeps, log, arduino, scope, laserDriver, dir='../Data/'):
     """
     Measure and save single sweeps for a given number of sweeps.
     """
-    from datetime import datetime
     import time
 
     # Make directory to store files
