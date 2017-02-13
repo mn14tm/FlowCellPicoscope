@@ -1,11 +1,8 @@
 import time
-
 import matplotlib.pyplot as plt
 import numpy as np
 from picoscope import ps5000a
-
-from labonchip.Methods.HelperFunctions import fit_decay, decay
-
+import photonics.fluorescence as fl
 
 class Picoscope:
     def __init__(self, *args, **kwargs):
@@ -90,33 +87,13 @@ class Picoscope:
 
         # Collect data
         self.armMeasure()
-        data = self.measure()
+        y = self.measure()
 
-        # Calculate lifetime
-        popt = fit_decay(x, data)
-        residuals = data - decay(x, *popt)
-        standd = np.std(residuals)
+        # Fit a single exp. decay function
+        popt, perr, chisq = fl.fit_decay(x, y)
 
         # Do plots
-        fig, (ax1, ax2) = plt.subplots(2, figsize=(15, 15), sharex=False)
-        # creating a timer object and setting an interval of 3000 milliseconds
-        timer = fig.canvas.new_timer(interval=3000)
-        timer.add_callback(plt.close)
-        ax1.set_title("Lifetime is {0:.4f} $\pm$ {1:.4f} ms".format(popt[1], standd))
-        ax1.plot(x, data, 'k.', label="Original Noised Data")
-        ax1.plot(x, decay(x, *popt), 'r-', label="Fitted Curve")
-        ax1.axvline(popt[1], color='blue')
-        ax1.grid(True, which="major")
-        ax1.set_ylabel('Intensity (A.U.)')
-        ax1.set_xlim(0, max(x))
-        ax1.axhline(y=0, color='k')
-        ax1.legend()
-        ax2.set_xlabel("Time (ms)")
-        ax2.set_ylabel('Residuals')
-        ax2.axhline(y=0, color='k')
-        ax2.plot(x, residuals)
-        ax2.set_xlim(0, max(x))
-        ax2.grid(True, which="major")
+        fig = fl.plot_decay(x, y, fl.decay_fn, popt, log=True, norm=False)
         # Bring window to the front (above pycharm)
         fig.canvas.manager.window.activateWindow()
         fig.canvas.manager.window.raise_()

@@ -1,15 +1,13 @@
 import glob as gb
 import os
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import photonics.fluorescence as fl
 from tqdm import tqdm
 
-import lifetime.decay as lf
 
-
-def analysis(file, reject_start=0):
+def analysis(file, reject_start=0, pump=0):
     # Load HDF file
     store = pd.HDFStore(file)
     df_file = store['log']
@@ -25,20 +23,20 @@ def analysis(file, reject_start=0):
     # Close hdf5 file
     store.close()
 
-    # Drop data points at start (weird massive drop for T2)
-    x, y = lf.prepare_data(x, y, reject_start=reject_start, reject_end=0)
+    # Shift time axis to account for the pump and lamp delay. I.e. decay starts at t=0
+    x = fl.shift_time(x, length=pump)
 
-    # Calculate lifetime
-    popt = lf.fit_decay(x, y)
+    # Reject data while pump is on
+    x, y = fl.reject_time(x, y, reject_start=reject_start, reject_end=0)
+
+    # Fit a single exp. decay function
+    popt, perr, chisq = fl.fit_decay(x, y)
 
     # Append lifetime to individual measurement dataframe
     df_file['A'] = popt[0]
     df_file['tau'] = popt[1]
     df_file['c'] = popt[2]
 
-    # # Reflection mean and std calculation
-    # df_file['mean'] = np.mean(y)
-    # df_file['std'] = np.std(y)
     return df_file
 
 
