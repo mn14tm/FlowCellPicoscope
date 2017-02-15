@@ -6,7 +6,6 @@ import pandas as pd
 import photonics.fluorescence as fl
 from tqdm import tqdm
 
-
 def analysis(file, reject_start=0, pump=0):
     # Load HDF file
     store = pd.HDFStore(file)
