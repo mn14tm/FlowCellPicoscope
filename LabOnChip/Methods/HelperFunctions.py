@@ -40,9 +40,7 @@ def analysis(file, reject_start=0, pump=0):
 
 
 def folder_analysis(folder, savename='analysis'):
-    """
-    Use single thread to analyse data (h5) files inside: folder/raw
-    """
+    """Use single thread to analyse data (h5) files inside: folder/raw"""
     # Get raw data files list
     directory = "../Data/" + str(folder)
     files = gb.glob(directory + "/raw/*.h5")
@@ -69,8 +67,7 @@ def folder_analysis(folder, savename='analysis'):
 
 
 def folder_analysis_pool(folder):
-    """
-    Use multiprocessing to analysise raw files inside the timestamp folder"""
+    """Use multiprocessing to analysise raw files inside the timestamp folder"""
     from multiprocessing import Pool
 
     # Get raw data files list
@@ -141,11 +138,10 @@ def dilution(conc_out, conc_stock, vol_out=1):
     return vol_dilute, vol_stock
 
 
-def sweeps_number(sweeps, log, arduino, scope, laserDriver, dir='../Data/'):
-    """
-    Measure and save single sweeps for a given number of sweeps.
-    """
+def sweeps_number(sweeps, log, arduino, scope, laserDriver, dir='../Data/', thermocouple=True):
+    """Measure and save single sweeps for a given number of sweeps."""
     import time
+    from datetime import datetime
 
     # Make directory to store files
     directory = dir + str(log['measurementID']) + "/raw"
@@ -160,8 +156,9 @@ def sweeps_number(sweeps, log, arduino, scope, laserDriver, dir='../Data/'):
         log['datetime'] = datetime.now()
         if time.time() - start > 3:
             arduino.get_data()
-            log['t_in'] = arduino.t_in
-            log['t_out'] = arduino.t_out
+            if thermocouple:
+                log['t_in'] = arduino.t_in
+                log['t_out'] = arduino.t_out
             log['tempC'] = arduino.tempC
             log['humidity'] = arduino.humidity
             arduino.request_data()
@@ -182,9 +179,7 @@ def sweeps_number(sweeps, log, arduino, scope, laserDriver, dir='../Data/'):
 
 
 def sweeps_time(mins, log, arduino, scope, laserDriver, dir='../Data/'):
-    """
-    Measure and save single sweeps over a given time.
-    """
+    """Measure and save single sweeps over a given time."""
     from datetime import datetime
     import time
     log['run_time'] = mins

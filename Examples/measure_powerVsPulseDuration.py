@@ -1,52 +1,13 @@
 import os
 import time
-import winsound
 import pandas as pd
 import numpy as np
-
-from tqdm import tqdm
 from datetime import datetime
 from labonchip.Methods.Devices.Arduino import Arduino
 from labonchip.Methods.Devices.Picoscope import Picoscope
 from labonchip.Methods.Devices.ITC4001 import ITC4001
-from labonchip.Methods.HelperFunctions import folder_analysis, plot_analysis, copy_data
+from labonchip.Methods.HelperFunctions import folder_analysis, plot_analysis, copy_data, sweeps_number
 
-
-def sweeps_number(sweeps, log, arduino, scope, laserDriver):
-    """ Measure and save single sweeps for a given number of sweeps. """
-    log['sweeps'] = sweeps
-
-    # Make directory to store files
-    directory = "../Data/" + str(log['measurementID']) + "/raw"
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    # Collect and save data for each sweep
-    start = time.time()
-    for i in tqdm(range(sweeps)):
-        log['sweep_no'] = i + 1
-
-        if time.time() - start > 3:
-            arduino.get_data()
-            log['tempC'] = arduino.tempC
-            log['humidity'] = arduino.humidity
-            arduino.request_data()
-            start = time.time()
-            # Update laser measured optical power (by photodiode internal)
-            log['optical power'] = laserDriver.get_optical_power()
-
-        # Collect data from picoscope (detector)
-        scope.armMeasure()
-        log['datetime'] = datetime.now()
-        data = scope.measure()
-
-        fname = directory + "/" + str(log['datetime'].timestamp()) + ".h5"
-        storeRaw = pd.HDFStore(fname)
-        storeRaw.put('log/', pd.DataFrame(log, index=[0]))
-
-        rawData = pd.Series(data)
-        storeRaw.put('data/', rawData)
-        storeRaw.close()
 
 if __name__ == "__main__":
     # Measurement Info Dictionary
@@ -54,34 +15,36 @@ if __name__ == "__main__":
                chip='T2',
                medium='Air'
                )
+    # How long to capture the decay for (ms) [same as picoscope]
+    decay_time = 120
 
-    # Setup laser diode driver
+    # Setup devices
     laserDriver = ITC4001()
-
-    # Setup picoscope for logging
+    arduino = Arduino()
     scope = Picoscope()
     scope.openScope()
     log['fs'] = scope.res[0]
     log['sample_no'] = scope.res[1]
 
-    # Setup Arduino
-    arduino = Arduino()
-    log['tempC'] = arduino.tempC
-    log['humidity'] = arduino.humidity
-
-    # Set Flow Rate to desired dilution (ml/min)
+    # Sweep over pump powers (A)
     for current in np.arange(0.1, 0.6, step=0.1):
         print("Measuring at {}A power:".format(current))
         log["current"] = current  # Laser drive current(A)
-        laserDriver.set_ld_current(log["current"])
+        laserDriver.set_ld_current(current)
 
-        # Sweep over various pump powers
+        # Sweep over pulse times (ms)
         for pulse_duration in [1, 5, 10, 20, 30, 40, 50, 70, 100]:
-            # Capture and fit single sweeps
+            laserDriver.set_qcw(period=(pulse_duration+decay_time)*1e-3, width=pulse_duration*1e-3)
+
             laserDriver.turn_ld_on()
-            time.sleep(5)  # Wait for laser driver to fire up
+            arduino.request_data()
+            time.sleep(5)
+            arduino.get_data()
+            log['tempC'] = arduino.tempC
+            log['humidity'] = arduino.humidity
             log['optical power'] = laserDriver.get_optical_power()
-            sweeps_number(sweeps=500, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
+
+            sweeps_number(sweeps=500, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver, thermocouple=False)
             laserDriver.turn_ld_off()
             time.sleep(1)
 
