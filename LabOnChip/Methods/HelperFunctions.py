@@ -157,7 +157,7 @@ def sweeps_number(sweeps, log, arduino, scope, laserDriver, dir='../Data/'):
     start = time.time()
     for i in tqdm(range(sweeps)):
         log['sweep_no'] = i + 1
-
+        log['datetime'] = datetime.now()
         if time.time() - start > 3:
             arduino.get_data()
             log['t_in'] = arduino.t_in

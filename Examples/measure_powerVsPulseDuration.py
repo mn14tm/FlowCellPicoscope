@@ -2,6 +2,7 @@ import os
 import time
 import winsound
 import pandas as pd
+import numpy as np
 
 from tqdm import tqdm
 from datetime import datetime
@@ -50,8 +51,8 @@ def sweeps_number(sweeps, log, arduino, scope, laserDriver):
 if __name__ == "__main__":
     # Measurement Info Dictionary
     log = dict(measurementID=str(datetime.now().timestamp()),
-               chip='T26',
-               medium='Reflectance Standards'
+               chip='T2',
+               medium='Air'
                )
 
     # Setup laser diode driver
@@ -69,34 +70,20 @@ if __name__ == "__main__":
     log['humidity'] = arduino.humidity
 
     # Set Flow Rate to desired dilution (ml/min)
-    for reflectance in [99, 80, 60, 40, 20, 10, 5, 2, 0]:
-        print("Place reflectance {} onto chip (0 is air):".format(reflectance))
-        time.sleep(15)
-        print("Measuring...")
-
-        # Update concentration to save to data files
-        log['concentration'] = reflectance
+    for current in np.arange(0.1, 0.6, step=0.1):
+        print("Measuring at {}A power:".format(current))
+        log["current"] = current  # Laser drive current(A)
+        laserDriver.set_ld_current(log["current"])
 
         # Sweep over various pump powers
-        for current in [0.5, 0.4, 0.3, 0.2, 0.1]:
-            log["current"] = current  # Laser drive current(A)
-            laserDriver.set_ld_current(log["current"])
+        for pulse_duration in [1, 5, 10, 20, 30, 40, 50, 70, 100]:
+            # Capture and fit single sweeps
             laserDriver.turn_ld_on()
             time.sleep(5)  # Wait for laser driver to fire up
             log['optical power'] = laserDriver.get_optical_power()
-
-            if current == 0.5:
-                scope.show_signal()  # Show a single sweep with the fit
-
-            # Capture and fit single sweeps
             sweeps_number(sweeps=500, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
             laserDriver.turn_ld_off()
             time.sleep(1)
-        try:
-            winsound.Beep(500, 1000)
-        except:
-            pass
-        print("Measurement finished")
 
     # Stop and close all instruments
     scope.closeScope()

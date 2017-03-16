@@ -10,11 +10,11 @@ Vcc  -> A3
 DATA -> A4
 SCK  -> A5
 ******************************************************************************/
-#include <SHT1X.h>
-
 /* -- SHT1x -- */
+#include <SHT1x.h>
+
 //Create an instance of the SHT1X sensor
-SHT1x sht15(A4, A5);//Data, SCK
+SHT1x sht15(A4, A5);//Data_Pin, SCK_Pin
 
 //delacre output pins for powering the sensor
 int power = A3;
