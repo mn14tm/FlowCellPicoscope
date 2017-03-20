@@ -1,9 +1,9 @@
 import time
 from datetime import datetime
 
-from labonchip.Devices.Arduino import Arduino
-from labonchip.Devices.ITC4001 import ITC4001
-from labonchip.Devices.Picoscope import Picoscope
+from labonchip.Methods.Devices.Arduino import Arduino
+from labonchip.Methods.Devices.ITC4001 import ITC4001
+from labonchip.Methods.Devices.Picoscope import Picoscope
 
 from labonchip.Methods.Devices.SyringePump import SyringePump
 from labonchip.Methods.HelperFunctions import folder_analysis, dilution, sweeps_time

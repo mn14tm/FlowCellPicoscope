@@ -3,10 +3,11 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import photonics.fluorescence as fl
+import photonics.photodiode as fl
 from tqdm import tqdm
 
-def analysis(file, reject_start=0, pump=0):
+
+def analysis(file, pump=0, reject_start=0, reject_end=0):
     # Load HDF file
     store = pd.HDFStore(file)
     df_file = store['log']
@@ -23,18 +24,22 @@ def analysis(file, reject_start=0, pump=0):
     store.close()
 
     # Shift time axis to account for the pump and lamp delay. I.e. decay starts at t=0
-    x = fl.shift_time(x, length=pump)
+    x = fl.shift_time(x, dt=pump)
 
     # Reject data while pump is on
-    x, y = fl.reject_time(x, y, reject_start=reject_start, reject_end=0)
+    x, y = fl.reject_time(x, y, reject_start=reject_start, reject_end=reject_end)
 
     # Fit a single exp. decay function
-    popt, perr, chisq = fl.fit_decay(x, y)
+    popt, perr = fl.fit_decay(x, y, p0=[max(y), 10, min(y)], print_out=False)
 
     # Append lifetime to individual measurement dataframe
     df_file['A'] = popt[0]
     df_file['tau'] = popt[1]
     df_file['c'] = popt[2]
+
+    df_file['A_err'] = perr[0]
+    df_file['tau_err'] = perr[1]
+    df_file['c_err'] = perr[2]
 
     return df_file
 
@@ -234,7 +239,7 @@ def text_when_done():
     accountSID = 'AC8e87f7e3dfec4552532dcae2480fa021'
     authToken = 'a576d5aac28efc503b50b5958e9276f0'
     twilioCli = TwilioRestClient(accountSID, authToken)
-    myTwilioNumber = '+441725762055'
+    myTwilioNumber = '+441792720311'
     myCellPhone = '+447932553111'
 
     message = twilioCli.messages.create(
