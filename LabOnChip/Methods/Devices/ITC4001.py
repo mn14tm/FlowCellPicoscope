@@ -28,19 +28,22 @@ class ITC4001:
         self.inst.write('SOUR:CURR {:.2f}'.format(current))
 
     def turn_ld_on(self):
+        # Turn laser diode on
         self.inst.write('OUTP ON')
 
     def turn_ld_off(self):
+        # Turn laser diode off
         self.inst.write('OUTP OFF')
 
     def get_optical_power(self):
-        # Measures LD power via PD
+        # Measures laser diode power via PD
         return float(self.inst.query("MEAS:POWer2?"))
 
     def set_qcw(self, period=0.2, width=0.05):
-        # Set source period to 200 ms
+        # Set QCW pulse
+        # Set source pulse period (s)
         self.inst.write('SOUR:PULS:PER {:.3f}'.format(period))
-        # Set pulse width to 50 ms
+        # Set pulse width (s)
         self.inst.write('SOUR:PULS:WIDT {:.3f}'.format(width))
         # Set trigger source to internal
         self.inst.write('TRIG:SOUR INT')
