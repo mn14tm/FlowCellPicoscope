@@ -8,20 +8,26 @@ class ITC4001:
         # rm.list_resources()
         self.inst = rm.open_resource('USB0::0x1313::0x804A::M00315699::INSTR')
         # print(self.inst.query("*IDN?"))  # What are you?
+        # Turn TEC on
+        self.inst.write('OUTP2:STAT ON')
 
-    def setup_980nm(self):
+    def setup_980nm_ld(self):
         """ Setup parameters for 980nm laser diode. """
         # Set TEC setpoint
         self.inst.write('SOUR:TEMP 25C')
         # Set LD current setpoint
         self.inst.write('SOUR:CURR LIM 0.5')
 
-    def setup_1618nm(self):
-        """ Setup parameters for 980nm laser diode. """
+    def setup_1618nm_ld(self):
+        """ Setup parameters for 1618nm laser diode. """
         # Set TEC setpoint
         self.inst.write('SOUR:TEMP 25C')
         # Set LD current setpoint
         self.inst.write('SOUR:CURR:LIM 0.4')
+
+    def set_ld_shape(self, shape='DC'):
+        """Set CW(DC) or QCW(PULSe) mode"""
+        self.inst.write('SOUR:FUNC:SHAP {:s}'.format(shape))
 
     def set_ld_current(self, current):
         # Set LD current setpoint
@@ -50,3 +56,16 @@ class ITC4001:
 
     def load_config(self, loc=1):
         self.inst.write('*RCL {:s}'.format(loc))
+
+    def clear(self):
+        """Clears the event registers in all register groups. This command also clears the error queue."""
+        self.inst.write('*CLS')
+
+    def print_error(self):
+        print(self.inst.query('SYST:ERR?'))
+
+    def user_write(self, string):
+        self.inst.write(string)
+
+    def user_query(self, string):
+        self.inst.query(string)
