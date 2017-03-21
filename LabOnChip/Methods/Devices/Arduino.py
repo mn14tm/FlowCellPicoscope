@@ -1,6 +1,7 @@
-import serial
-import time
 import re
+import time
+
+import serial
 
 
 class Arduino:
@@ -26,7 +27,7 @@ class Arduino:
         self.request_data()
         time.sleep(3)
         self.get_data()
-        self.request_data()
+        # self.request_data()
 
     def request_data(self):
         # Serial request temperature, humidity and thermocouple data (ArduinoV3)
@@ -41,10 +42,18 @@ class Arduino:
             # Extract data from string
             result = re.findall(r"\d+\.\d+", last_received)
             # Convert to floats
-            result = map(float, result)
+            result = [float(i) for i in result]
             # Store results
-            [self.tempC, self.humidity, self.t_in, self.t_out] = result
+            try:
+                [self.tempC, self.humidity, self.t_in, self.t_out] = result
+            except:
+                print(result)
             # print(self.tempC, self.humidity, self.t_in, self.t_out)
+
+    def update(self):
+        self.request_data()
+        time.sleep(3)
+        self.get_data()
 
     def log_arduino(self):
         # Used when arduino is constantly pumping out updates (i.e. threading required)
@@ -59,5 +68,10 @@ class Arduino:
                 buffer_string = ''  # Reset buffer string
                 print(self.tempC, self.humidity, self.t_in, self.t_out)
 
+    def close(self):
+        self.ser.close()
+
 if __name__ == "__main__":
     arduino = Arduino()
+    arduino.update()
+    print(arduino.t_in, arduino.t_out, arduino.tempC, arduino.humidity)

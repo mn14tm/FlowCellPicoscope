@@ -1,4 +1,5 @@
 import time
+
 import matplotlib.pyplot as plt
 import numpy as np
 from picoscope import ps5000a
@@ -9,11 +10,10 @@ class Picoscope:
         super(Picoscope, self).__init__()
         self.ps = ps5000a.PS5000a(connect=False)
 
-    def openScope(self):
+    def openScope(self, bitRes=16, obsDuration=120e-3, sampleFreq=1E4):
         self.ps.open()
 
         # Set bit resolution
-        bitRes = 16
         self.ps.setResolution(str(bitRes))
 
         # Set trigger and channels
@@ -22,9 +22,6 @@ class Picoscope:
         self.ps.setChannel("B", coupling="DC", VRange=5.0, VOffset=0, enabled=False)
 
         # Set capture duration (s) and sampling frequency (Hz)
-        waveformDuration = 120E-3
-        obsDuration = 1*waveformDuration
-        sampleFreq = 1E4
         sampleInterval = 1.0 / sampleFreq
         self.res = self.ps.setSamplingInterval(sampleInterval, obsDuration)
 
@@ -50,11 +47,32 @@ class Picoscope:
 
     def get_time(self, milli=True):
         """Return time array corresponding to measurement in ms. Set milli=False for time in seconds."""
-        x = np.arange(scope.res[1]) * scope.res[0]
+        x = np.arange(self.res[1]) * self.res[0]
         # Convert to milliseconds
         if milli:
             x *= 1E3
         return x
+
+    def plot(self, show=True, decay=False):
+        self.armMeasure()
+        y = self.measure()
+        x = self.get_time()
+
+        if decay:
+            # Fit decay
+            popt, perr = fl.fit_decay(x, y)
+            fig = fl.plot_decay(x, y, fl.decay_fn, popt, log=False, norm=False, show=show)
+            return fig
+        else:
+            # Just plot data
+            fig, ax = plt.subplots()
+            ax.plot(x, y, '.')
+            ax.grid(True, which="major")
+            ax.set_ylabel('Intensity (A.U.)')
+            ax.set_xlabel("Time (ms)")
+            if show:
+                plt.show()
+            return fig
 
 if __name__ == "__main__":
     scope = Picoscope()
@@ -74,5 +92,6 @@ if __name__ == "__main__":
 
     # Fit decay
     import photonics.photodiode as fl
-    popt, perr, chisq = fl.fit_decay(x, y)
+
+    popt, perr = fl.fit_decay(x, y)
     fig = fl.plot_decay(x, y, fl.decay_fn, popt, log=False, norm=False)

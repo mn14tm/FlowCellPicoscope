@@ -1,9 +1,8 @@
 import time
 
-from labonchip.Devices.Arduino import Arduino
-from labonchip.Devices.Picoscope import Picoscope
-
+from labonchip.Methods.Devices.Arduino import Arduino
 from labonchip.Methods.Devices.ITC4001 import ITC4001
+from labonchip.Methods.Devices.Picoscope import Picoscope
 from labonchip.Methods.HelperFunctions import folder_analysis, plot_analysis, sweeps_number
 
 if __name__ == "__main__":
