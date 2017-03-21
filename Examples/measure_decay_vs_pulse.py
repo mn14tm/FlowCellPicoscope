@@ -104,7 +104,7 @@ def plot(folder, save=True):
 if __name__ == "__main__":
     # Measurement Info Dictionary
     log = dict(measurementID=str(datetime.now().timestamp()),
-               chip='T24',
+               chip='T20',
                medium='Air'
                )
 
@@ -121,6 +121,8 @@ if __name__ == "__main__":
 
     # Setup devices
     laserDriver = ITC4001()
+    laserDriver.setup_980nm_ld()
+    laserDriver.set_ld_shape('PULS')
     arduino = Arduino()
     scope = Picoscope()
     scope.openScope()

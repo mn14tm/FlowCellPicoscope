@@ -1,14 +1,12 @@
 import time
-from datetime import datetime
-
-import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from datetime import datetime
 from tqdm import tqdm
-
 from labonchip.Methods.Devices.Arduino import Arduino
-from labonchip.Methods.Devices.ITC4001 import ITC4001
 from labonchip.Methods.Devices.Picoscope import Picoscope
+from labonchip.Methods.Devices.ITC4001 import ITC4001
 
 
 def measure(log):
@@ -104,16 +102,16 @@ def plot_analysis(df, folder, dir='../Data/', save=True):
         plt.savefig(directory + '/currentVsMean.png', dpi=300)
     plt.show()
 
-
 if __name__ == "__main__":
     # Measurement Info Dictionary
     log = dict(measurementID=str(datetime.now().timestamp()),
-               chip='T27',
+               chip='T20',
                medium='Air'
                )
 
     # Setup devices
     laserDriver = ITC4001()
+    laserDriver.set_ld_shape('DC')
     arduino = Arduino()
     scope = Picoscope()
     scope.openScope(obsDuration=10)
@@ -122,7 +120,6 @@ if __name__ == "__main__":
 
     # Sweep over pump powers (A)
     for current in tqdm(np.linspace(0.1, 0.5, num=21, endpoint=True)):
-        # for current in [0.5]:
         log["current"] = current  # Laser drive current(A)
         laserDriver.set_ld_current(current)
         laserDriver.turn_ld_on()

@@ -18,7 +18,7 @@ class Picoscope:
 
         # Set trigger and channels
         self.ps.setSimpleTrigger(trigSrc="External", threshold_V=2.0, direction="Falling", timeout_ms=5000)
-        self.ps.setChannel("A", coupling="DC", VRange=2.0, VOffset=-1.8, enabled=True, BWLimited=1)
+        self.ps.setChannel("A", coupling="DC", VRange=10.0, VOffset=-8.0, enabled=True, BWLimited=1)
         self.ps.setChannel("B", coupling="DC", VRange=5.0, VOffset=0, enabled=False)
 
         # Set capture duration (s) and sampling frequency (Hz)
