@@ -57,7 +57,6 @@ def plot(folder, save=True):
     ax1.set_title('Chip: {}'.format(df.chip.unique()[0]))
     ax2.legend(title='Laser current (A)', loc='best', fontsize='medium')
     if save:
-        pass
         plt.savefig(data_folder + str(folder) + '/result')
 
     # Contour plot
