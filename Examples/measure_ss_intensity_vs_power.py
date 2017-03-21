@@ -105,12 +105,13 @@ def plot_analysis(df, folder, dir='../Data/', save=True):
 if __name__ == "__main__":
     # Measurement Info Dictionary
     log = dict(measurementID=str(datetime.now().timestamp()),
-               chip='T27',
+               chip='T20',
                medium='Air'
                )
 
     # Setup devices
     laserDriver = ITC4001()
+    laserDriver.set_ld_shape('DC')
     arduino = Arduino()
     scope = Picoscope()
     scope.openScope(obsDuration=10)
@@ -119,7 +120,6 @@ if __name__ == "__main__":
 
     # Sweep over pump powers (A)
     for current in tqdm(np.linspace(0.1, 0.5, num=21, endpoint=True)):
-    # for current in [0.5]:
         log["current"] = current  # Laser drive current(A)
         laserDriver.set_ld_current(current)
         laserDriver.turn_ld_on()
