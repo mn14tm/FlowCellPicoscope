@@ -105,7 +105,7 @@ def plot_analysis(df, folder, dir='../Data/', save=True):
 if __name__ == "__main__":
     # Measurement Info Dictionary
     log = dict(measurementID=str(datetime.now().timestamp()),
-               chip='T20',
+               chip='T21',
                medium='Air'
                )
 

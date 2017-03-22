@@ -1,4 +1,5 @@
 import time
+import matplotlib.pyplot as plt
 
 from labonchip.Methods.Devices.Arduino import Arduino
 from labonchip.Methods.Devices.ITC4001 import ITC4001
@@ -7,49 +8,52 @@ from labonchip.Methods.HelperFunctions import folder_analysis, plot_analysis, sw
 
 if __name__ == "__main__":
     # Measurement Info Dictionary
-    log = dict(measurementID='T2_refractive_index_liquids3',  # datetime.now().timestamp(),
-               chip='T2',
-               medium='IPA',
-               n=1.37)
+    log = dict(measurementID='T21_air_canola',  # datetime.now().timestamp(),
+               chip='T21',
+               medium='CanolaOil',
+               n=1.61)
 
-    # Setup laser diode driver
-    log["current"] = 0.5  # Laser drive current(A)
+    # Make directory to store files
+    import os
+    directory = '../Data/' + str(log['measurementID']) + "/raw"
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        os.makedirs('../Data/' + str(log['measurementID']) + "/Plots")
+
+    # Setup devices
     laserDriver = ITC4001()
-    laserDriver.set_ld_current(log["current"])
-    laserDriver.turn_ld_on()
-    log['optical power'] = laserDriver.get_optical_power()
-
-    # Setup picoscope for logging
+    laserDriver.setup_980nm_ld()
+    laserDriver.set_ld_shape('PULS')
+    laserDriver.set_qcw(period=170e-3, width=50e-3)
+    arduino = Arduino()
     scope = Picoscope()
     scope.openScope()
-    scope.show_signal()  # Show a single sweep with the fit
-    log['fs'] = scope.res[0]
-    log['sample_no'] = scope.res[1]
-    laserDriver.turn_ld_off()
 
-    # Setup Arduino
-    arduino = Arduino()
-    log['t_in'] = arduino.t_in
-    log['t_out'] = arduino.t_out
+    # Update Experimental Log
     log['tempC'] = arduino.tempC
     log['humidity'] = arduino.humidity
+    log['fs'] = scope.res[0]
+    log['sample_no'] = scope.res[1]
 
-    # Sweep over various pump powers
-    for current in [0.5, 0.4, 0.3, 0.2, 0.1]:
-        log["current"] = current  # Laser drive current(A)
-        laserDriver.set_ld_current(log["current"])
-        laserDriver.turn_ld_on()
-        time.sleep(10)  # Wait for laser driver to fire up
-        log['optical power'] = laserDriver.get_optical_power()
+    # Begin laser pulse
+    laserDriver.turn_ld_on()
+    time.sleep(5)  # Wait for laser driver to fire up
+    log['optical power'] = laserDriver.get_optical_power()
 
-        # Capture and fit single sweeps
-        sweeps_number(sweeps=400, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
-        # sweeps_time(mins=1, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
-        laserDriver.turn_ld_off()
+    # Save plot of the decay
+    fig = scope.plot(show=False)
+    fig.savefig('../Data/' + str(log['measurementID']) + '/Plots/pulse_duration_50ms_current_500mA_canola.png')
+    plt.close(fig)  # close the figure
+
+    # Capture and fit single sweeps
+    sweeps_number(sweeps=400, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
+    # sweeps_time(mins=1, log=log, arduino=arduino, scope=scope, laserDriver=laserDriver)
+    laserDriver.turn_ld_off()
 
     # Stop and close all instruments
     scope.closeScope()
     laserDriver.turn_ld_off()
+    arduino.close()
     print('Finished measurements.')
 
     # Analyse Data

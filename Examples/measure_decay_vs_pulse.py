@@ -109,7 +109,6 @@ if __name__ == "__main__":
 
     # Make directory to store files
     import os
-
     directory = '../Data/' + str(log['measurementID']) + "/raw"
     if not os.path.exists(directory):
         os.makedirs(directory)
