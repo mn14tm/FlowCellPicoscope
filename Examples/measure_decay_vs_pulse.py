@@ -4,21 +4,15 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 
-from labonchip.Methods.Devices.Arduino import Arduino
-from labonchip.Methods.Devices.ITC4001 import ITC4001
-from labonchip.Methods.Devices.Picoscope import Picoscope
 from labonchip.Methods.HelperFunctions import folder_analysis, sweeps_number, text_when_done
 
 
-def plot(folder, save=True):
+def plot(folder, data_folder='../Data/', save=True):
     import pandas as pd
-    import numpy as np
-    import matplotlib.pyplot as plt
 
     # Load HDF file
-    data_folder = '../Data/'
-    df = pd.HDFStore(data_folder + str(folder) + '/analysis.h5')['df']
-
+    df = pd.read_hdf(data_folder + str(folder) + '/analysis.h5')
+    chip = df.chip.unique()[0]
     # Create column for time since start of measurement
     df['delta'] = (df['datetime'] - df['datetime'][0]).fillna(0).astype('timedelta64[us]') / (1E6 * 60)
 
@@ -38,32 +32,32 @@ def plot(folder, save=True):
     ax2.set_xlabel('Time since start of experiment (Mins)')
     ax1.set_ylabel('Lifetime (ms)')
     ax2.set_ylabel('Amplitude (A.U.)')
-    plt.title('Chip: {}'.format(df.chip.unique()[0]))
+    ax1.set_title('Chip: {}'.format(chip))
     if save:
         plt.savefig(data_folder + str(folder) + '/experimental_run')
 
     # Tau and amp. plots
-    df2 = df[['current', 'pulse_width', 'tau', 'A']]
-    g = df2.groupby(['current', 'pulse_width']).agg([np.mean, np.std])
-    g2 = g.reset_index()
+    df = df[['current', 'pulse_width', 'tau', 'A']]
+    g = df.groupby(['current', 'pulse_width']).agg([np.mean, np.std])
+    g = g.reset_index()
     # Two subplots, unpack the axes array immediately
     f, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
-    for key, group in g2.groupby('current'):
+    for key, group in g.groupby('current'):
         ax1.errorbar(group['pulse_width'], group['tau']['mean'], yerr=group['tau']['std'], label=key)
         ax2.errorbar(group['pulse_width'], group['A']['mean'], yerr=group['A']['std'], label=key)
     ax2.set_xlabel('Pulse Width (ms)')
     ax1.set_ylabel('Lifetime (ms)')
     ax2.set_ylabel('Amplitude (A.U.)')
-    ax1.set_title('Chip: {}'.format(df.chip.unique()[0]))
+    ax1.set_title('Chip: {}'.format(chip))
     ax2.legend(title='Laser current (A)', loc='best', fontsize='medium')
     if save:
         plt.savefig(data_folder + str(folder) + '/result')
 
     # Contour plot
     import matplotlib.mlab as ml
-    x = g2['pulse_width']
-    y = g2['current']
-    z = g2['tau']['mean']
+    x = g['pulse_width']
+    y = g['current']
+    z = g['tau']['mean']
 
     xi = np.linspace(0, 100, 500)
     yi = np.linspace(min(y), max(y), 500)
@@ -83,7 +77,7 @@ def plot(folder, save=True):
     if save:
         plt.savefig(data_folder + str(folder) + '/contour_tau')
 
-    z = g2['A']['mean']
+    z = g['A']['mean']
     zi = ml.griddata(x, y, z, xi, yi, interp='linear')
 
     fig, ax = plt.subplots()
@@ -100,7 +94,12 @@ def plot(folder, save=True):
     if save:
         plt.savefig(data_folder + str(folder) + '/contour_A')
 
-if __name__ == "__main__":
+
+def measure():
+    from labonchip.Methods.Devices.Arduino import Arduino
+    from labonchip.Methods.Devices.ITC4001 import ITC4001
+    from labonchip.Methods.Devices.Picoscope import Picoscope
+
     # Measurement Info Dictionary
     log = dict(measurementID=str(datetime.now().timestamp()),
                chip='T20',
@@ -163,12 +162,18 @@ if __name__ == "__main__":
     arduino.close()
     print('Finished measurement.')
 
+    return log['measurementID']
+
+
+if __name__ == "__main__":
+    # Do measurement
+    measurementID = measure()
     # Analyse Data
     print("Analysing data files...")
-    df = folder_analysis(log['measurementID'])
+    folder_analysis(measurementID)
     text_when_done()
     print("Done! Now plotting...")
-    plot(folder=log['measurementID'])
+    plot(folder=measurementID)
     # print("Copying files to network...")
     # copy_data(str(log['measurementID']))
     print("Finito!")

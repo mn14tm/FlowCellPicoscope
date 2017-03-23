@@ -104,35 +104,33 @@ def folder_analysis_pool(folder):
     return df
 
 
-def plot_analysis(df, folder, dir='../Data/', save=True, hist=False):
-    # Directory to save plots to
-    directory = dir + str(folder)
+def plot_analysis(folder, dir='../Data/', save=True, hist=False):
+    # Load HDF file
+    df = pd.HDFStore(dir + str(folder) + '/analysis.h5')['df']
 
     # Create plot of lifetime vs time
-    fig, (ax1, ax2) = plt.subplots(1, 2, sharex=True)
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
     ax1.plot(df['datetime'], df['tau'], 'o', alpha=0.3)
     ax2.plot(df['datetime'], df['A'], 'o', alpha=0.3)
 
     fig.autofmt_xdate()
-    ax1.grid(True)
-    ax2.grid(True)
     ax2.set_xlabel('Time (H:M)')
     ax1.set_ylabel('Lifetime (ms)')
     ax2.set_ylabel('Amplitude (A.U.)')
     plt.tight_layout()
     plt.ticklabel_format(useOffset=False, axis='y')
     if save:
-        plt.savefig(directory + '/lifetimeVsTime.png', dpi=300)
+        plt.savefig(dir + str(folder) + '/experimental_run')
 
     # Create histogram plot
     if hist:
-        fig2, ax2 = plt.subplots()
-        ax2.hist(df['tau'], bins=20)
+        fig, ax = plt.subplots()
+        ax.hist(df['tau'], bins=20)
         plt.ticklabel_format(useOffset=False)
         plt.xlabel('Lifetime (ms)')
         plt.ylabel('Frequency')
         if save:
-            plt.savefig(directory + '/histogram.png', dpi=300)
+            plt.savefig(dir + str(folder) + '/histogram')
     plt.show()
 
 

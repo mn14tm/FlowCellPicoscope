@@ -1,4 +1,5 @@
 import time
+
 import matplotlib.pyplot as plt
 
 from labonchip.Methods.Devices.Arduino import Arduino
@@ -24,12 +25,15 @@ if __name__ == "__main__":
     laserDriver = ITC4001()
     laserDriver.setup_980nm_ld()
     laserDriver.set_ld_shape('PULS')
+    current = 0.5
+    laserDriver.set_ld_current(current)
     laserDriver.set_qcw(period=170e-3, width=50e-3)
     arduino = Arduino()
     scope = Picoscope()
     scope.openScope()
 
     # Update Experimental Log
+    log["current"] = current  # Laser drive current(A)
     log['tempC'] = arduino.tempC
     log['humidity'] = arduino.humidity
     log['fs'] = scope.res[0]

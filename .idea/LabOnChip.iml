@@ -5,6 +5,7 @@
       <excludeFolder url="file://$MODULE_DIR$/Data" />
       <excludeFolder url="file://$MODULE_DIR$/Misc" />
       <excludeFolder url="file://$MODULE_DIR$/Plots" />
+      <excludeFolder url="file://$MODULE_DIR$/Retired Scripts" />
       <excludeFolder url="file://$MODULE_DIR$/labonchip/Data" />
     </content>
     <orderEntry type="jdk" jdkName="CondaPython" jdkType="Python SDK" />
