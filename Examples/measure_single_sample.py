@@ -9,10 +9,10 @@ from labonchip.Methods.HelperFunctions import folder_analysis, plot_analysis, sw
 
 if __name__ == "__main__":
     # Measurement Info Dictionary
-    log = dict(measurementID='T21_air_canola',  # datetime.now().timestamp(),
+    log = dict(measurementID='T21_air_mirror',  # datetime.now().timestamp(),
                chip='T21',
-               medium='CanolaOil',
-               n=1.61)
+               medium='Air',
+               n=1.0)
 
     # Make directory to store files
     import os
