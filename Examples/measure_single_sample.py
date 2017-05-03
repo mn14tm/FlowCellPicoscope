@@ -64,5 +64,7 @@ if __name__ == "__main__":
     print("Analysing data files...")
     df = folder_analysis(log['measurementID'])
     print("Done! Now plotting...")
-    plot_analysis(df, folder=log['measurementID'])
+    plot_analysis(folder=log['measurementID'])
     print("Finito!")
+    # df = folder_analysis('T21_air_mirror')
+    # plot_analysis('T21_air_mirror')
