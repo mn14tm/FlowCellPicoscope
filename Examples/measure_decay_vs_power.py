@@ -86,14 +86,15 @@ def measure():
                )
 
     # Directory to store data
-    dir = 'E:/Data/'
+    dataf = 'E:/Data/'
 
     # Make directory to store files
     import os
-    directory = dir + str(log['measurementID'])
+    directory = dataf + str(log['measurementID'])
     if not os.path.exists(directory):
         os.makedirs(directory + "/raw")
         os.makedirs(directory + "/Plots")
+        os.makedirs(directory + "/Plots/Temp")
 
     # Setup devices
     laserDriver = ITC4001()
@@ -122,10 +123,10 @@ def measure():
 
         # Save plot of the decay
         fig = scope.plot(show=False, fit=False)
-        fig.savefig(directory + '/Plots/current{0}.png'.format(current))
+        fig.savefig(directory + '/Plots/Temp/current{0}.png'.format(current))
         plt.close(fig)  # close the figure
 
-        sweeps_number(500, log, scope, laserDriver, dir=dir, arduino=arduino, thermocouple=False)
+        sweeps_number(500, log, scope, laserDriver, dataf=dataf, arduino=arduino, thermocouple=False)
         laserDriver.turn_ld_off()
         time.sleep(1)
 

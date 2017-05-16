@@ -75,11 +75,11 @@ class Picoscope:
         return fig
 
 
-def measure(log, dir='../Data/'):
+def measure(log, dataf='../Data/'):
     import os
 
     # Make directory to store files
-    directory = dir + str(log['measurementID'])
+    directory = dataf + str(log['measurementID'])
     if not os.path.exists(directory):
         os.makedirs(directory + "/raw")
         os.makedirs(directory + "/Plots")
@@ -191,7 +191,7 @@ if __name__ == "__main__":
         log['tempC'] = arduino.tempC
         log['humidity'] = arduino.humidity
         log['optical power'] = laserDriver.get_optical_power()
-        measure(log, dir='E:/Data/')
+        measure(log, dataf='E:/Data/')
         laserDriver.turn_ld_off()
         time.sleep(1)
 
