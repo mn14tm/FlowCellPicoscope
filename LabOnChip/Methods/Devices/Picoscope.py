@@ -59,6 +59,7 @@ class Picoscope:
         x = self.get_time()
 
         if decay:
+            import photonics.photodiode as fl
             # Fit decay
             popt, perr = fl.fit_decay(x, y)
             fig = fl.plot_decay(x, y, fl.decay_fn, popt, log=False, norm=False, show=show)

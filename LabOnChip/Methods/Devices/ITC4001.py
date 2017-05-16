@@ -7,6 +7,7 @@ class ITC4001:
         rm = visa.ResourceManager()
         # rm.list_resources()
         self.inst = rm.open_resource('USB0::0x1313::0x804A::M00315699::INSTR')
+        # self.inst = rm.open_resource('USB0::0x1313::0x804A::M00314891::INSTR')
         # print(self.inst.query("*IDN?"))  # What are you?
         # Turn TEC on
         self.inst.write('OUTP2:STAT ON')

@@ -8,7 +8,7 @@ import photonics.photodiode as fl
 from tqdm import tqdm
 
 
-def analysis(file, pump=0, reject_start=0, reject_end=0):
+def analysis(file, pump=0.0, reject_start=0.0, reject_end=0.0):
     # Load HDF file
     store = pd.HDFStore(file)
     df_file = store['log']
@@ -55,7 +55,7 @@ def folder_analysis(folder, savename='analysis'):
 
     # Do fitting
     for file in tqdm(files):
-        data = analysis(file)
+        data = analysis(file, reject_start=0.4)
         df = df.append(data)
 
     # Sort rows in measurement dataframe by datetime
@@ -142,15 +142,15 @@ def dilution(conc_out, conc_stock, vol_out=1):
     return vol_dilute, vol_stock
 
 
-def sweeps_number(sweeps, log, arduino, scope, laserDriver, dir='../Data/', thermocouple=True):
+def sweeps_number(sweeps, log, scope, laserDriver, dir='../Data/', arduino=None, thermocouple=True):
     """Measure and save single sweeps for a given number of sweeps."""
     import time
     from datetime import datetime
 
     # Make directory to store files
-    directory = dir + str(log['measurementID']) + "/raw"
+    directory = dir + str(log['measurementID'])
     if not os.path.exists(directory):
-        os.makedirs(directory)
+        os.makedirs(directory + "/raw")
 
     # Collect and save data for each sweep
     log['sweeps'] = sweeps
@@ -158,17 +158,19 @@ def sweeps_number(sweeps, log, arduino, scope, laserDriver, dir='../Data/', ther
     for i in tqdm(range(sweeps)):
         log['sweep_no'] = i + 1
         log['datetime'] = datetime.now()
-        if time.time() - start > 3:
-            arduino.get_data()
-            if thermocouple:
-                log['t_in'] = arduino.t_in
-                log['t_out'] = arduino.t_out
-            log['tempC'] = arduino.tempC
-            log['humidity'] = arduino.humidity
-            arduino.request_data()
+        # Update laser measured optical power (by internal photodiode)
+        log['optical power'] = laserDriver.get_optical_power()
+        # Update arduino data if passed to function
+        if arduino is not None:
+            if time.time() - start > 3:
+                arduino.get_data()
+                log['tempC'] = arduino.tempC
+                log['humidity'] = arduino.humidity
+                if thermocouple:
+                    log['t_in'] = arduino.t_in
+                    log['t_out'] = arduino.t_out
+                arduino.request_data()
             start = time.time()
-            # Update laser measured optical power (by internal photodiode)
-            log['optical power'] = laserDriver.get_optical_power()
 
         # Collect data from picoscope (detector)
         scope.armMeasure()
@@ -176,7 +178,7 @@ def sweeps_number(sweeps, log, arduino, scope, laserDriver, dir='../Data/', ther
         data = pd.Series(data)
 
         # Save data as h5 file
-        storeRaw = pd.HDFStore(directory + "/" + str(log['datetime'].timestamp()) + ".h5")
+        storeRaw = pd.HDFStore(directory + "/raw/" + str(log['datetime'].timestamp()) + ".h5")
         storeRaw.put('log/', pd.DataFrame(log, index=[0]))
         storeRaw.put('data/', data)
         storeRaw.close()
@@ -228,7 +230,7 @@ def sweeps_time(mins, log, arduino, scope, laserDriver, dir='../Data/'):
         storeRaw.close()
 
 
-def text_when_done():
+def text_when_done(text='Experiment Finished'):
     """
     Send me a text saying 'Experiment Finished'.
     """
@@ -242,7 +244,7 @@ def text_when_done():
     myCellPhone = '+447932553111'
 
     message = twilioCli.messages.create(
-        body='Experiment Finished',
+        body=text,
         from_=myTwilioNumber,
         to=myCellPhone)
     print(message.sid)
