@@ -8,7 +8,6 @@ from picoscope import ps5000a
 from tqdm import tqdm
 
 from labonchip.Methods.Devices.Arduino import Arduino
-# from labonchip.Methods.Devices.Picoscope import Picoscope
 from labonchip.Methods.Devices.ITC4001 import ITC4001
 
 
@@ -24,7 +23,7 @@ class Picoscope:
         self.ps.setResolution(str(bitRes))
 
         # Set trigger and channels
-        scope.ps.setChannel("A", coupling="DC", VRange=0.5, VOffset=-0.4, enabled=True, BWLimited=True)
+        scope.ps.setChannel("A", coupling="DC", VRange=2.0, VOffset=-1.0, enabled=True, BWLimited=True)
         self.ps.setChannel("B", coupling="DC", VRange=5.0, VOffset=0, enabled=False)
 
         # Set capture duration (s) and sampling frequency (Hz)
@@ -168,7 +167,7 @@ def plot_analysis(df, folder, dir='E:/Data/', save=True):
 if __name__ == "__main__":
     # Measurement Info Dictionary
     log = dict(measurementID=str(datetime.now().timestamp()),
-               chip='T2',
+               chip='T22',
                medium='Air'
                )
 

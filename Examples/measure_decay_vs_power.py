@@ -20,7 +20,7 @@ class Picoscope:
 
         # Set trigger and channels
         self.ps.setSimpleTrigger(trigSrc="External", threshold_V=2.0, direction="Rising", timeout_ms=5000)
-        self.ps.setChannel("A", coupling="DC", VRange=0.5, VOffset=-0.4, enabled=True, BWLimited=True)
+        self.ps.setChannel("A", coupling="DC", VRange=2.0, VOffset=-1.0, enabled=True, BWLimited=True)
         self.ps.setChannel("B", coupling="DC", VRange=5.0, VOffset=0, enabled=False)
 
         # Set capture duration (s) and sampling frequency (Hz)
@@ -81,7 +81,7 @@ def measure():
 
     # Measurement Info Dictionary
     log = dict(measurementID=str(datetime.now().timestamp()),
-               chip='T2',
+               chip='T22',
                medium='Air'
                )
 
@@ -126,7 +126,7 @@ def measure():
         fig.savefig(directory + '/Plots/Temp/current{0}.png'.format(current))
         plt.close(fig)  # close the figure
 
-        sweeps_number(500, log, scope, laserDriver, dataf=dataf, arduino=arduino, thermocouple=False)
+        sweeps_number(1000, log, scope, laserDriver, dataf=dataf, arduino=arduino, thermocouple=False)
         laserDriver.turn_ld_off()
         time.sleep(1)
 
@@ -139,6 +139,7 @@ def measure():
 
 
 if __name__ == "__main__":
+    time.sleep(15 * 60)
     # Do measurement
     measurementID = measure()
     text_when_done()

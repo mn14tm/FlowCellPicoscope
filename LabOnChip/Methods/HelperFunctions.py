@@ -142,15 +142,18 @@ def dilution(conc_out, conc_stock, vol_out=1):
     return vol_dilute, vol_stock
 
 
-def sweeps_number(sweeps, log, scope, laserDriver, dir='../Data/', arduino=None, thermocouple=True):
+def sweeps_number(sweeps, log, scope, laserDriver, dataf='../Data/', arduino=None, thermocouple=True):
     """Measure and save single sweeps for a given number of sweeps."""
     import time
     from datetime import datetime
 
     # Make directory to store files
-    directory = dir + str(log['measurementID'])
+    directory = dataf + str(log['measurementID'])
     if not os.path.exists(directory):
         os.makedirs(directory + "/raw")
+
+    # array to store total data
+    d = np.zeros(log['sample_no'])
 
     # Collect and save data for each sweep
     log['sweeps'] = sweeps
@@ -175,13 +178,29 @@ def sweeps_number(sweeps, log, scope, laserDriver, dir='../Data/', arduino=None,
         # Collect data from picoscope (detector)
         scope.armMeasure()
         data = scope.measure()
-        data = pd.Series(data)
 
-        # Save data as h5 file
+        # Add to total array
+        d += np.array(data)
+
+        # Save individual data sweep as h5 file
         storeRaw = pd.HDFStore(directory + "/raw/" + str(log['datetime'].timestamp()) + ".h5")
         storeRaw.put('log/', pd.DataFrame(log, index=[0]))
-        storeRaw.put('data/', data)
+        storeRaw.put('data/', pd.Series(data))
         storeRaw.close()
+
+    # Create time axis in ms
+    fs = log['fs']
+    samples = log['sample_no']
+    x = np.arange(samples) * fs * 1E3
+
+    # Save total data array
+    fname = directory + '/Plots/{0:.4f}'.format(log['current'])
+    np.savez(fname, t=x, data=d)
+
+    # Save a plot
+    fig, ax = plt.subplots()
+    ax.plot(x, d)
+    fig.savefig(directory + '/Plots/current{0:.4f}.png'.format(log['current']))
 
 
 def sweeps_time(mins, log, arduino, scope, laserDriver, dir='../Data/'):
