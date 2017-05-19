@@ -159,6 +159,7 @@ def sweeps_number(sweeps, log, scope, laserDriver, dataf='../Data/', arduino=Non
     log['sweeps'] = sweeps
     start = time.time()
     for i in tqdm(range(sweeps)):
+        time.sleep(np.random.rand()*(1/60))
         log['sweep_no'] = i + 1
         log['datetime'] = datetime.now()
         # Update laser measured optical power (by internal photodiode)
